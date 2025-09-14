@@ -5,7 +5,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
-import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -14,33 +13,37 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-function AuthRoutes() {
-  const { user } = useAuth();
+function AppRoutes() {
+  const { user, loading } = useAuth();
 
-  // Redirect authenticated users away from auth pages
-  if (user) {
-    return <Navigate to="/dashboard" replace />;
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="text-muted-foreground">Carregando...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
     <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/" element={<Navigate to="/login" replace />} />
-      <Route path="*" element={<Navigate to="/login" replace />} />
-    </Routes>
-  );
-}
-
-function AppRoutes() {
-  return (
-    <Routes>
-      <Route path="/login" element={<AuthRoutes />} />
-      <Route path="/register" element={<AuthRoutes />} />
-      <Route path="/forgot-password" element={<AuthRoutes />} />
-      <Route path="/" element={<AuthRoutes />} />
+      {/* Auth routes - redirect to dashboard if already authenticated */}
+      <Route 
+        path="/login" 
+        element={user ? <Navigate to="/dashboard" replace /> : <Login />} 
+      />
+      <Route 
+        path="/register" 
+        element={user ? <Navigate to="/dashboard" replace /> : <Register />} 
+      />
+      <Route 
+        path="/forgot-password" 
+        element={user ? <Navigate to="/dashboard" replace /> : <ForgotPassword />} 
+      />
       
+      {/* Protected routes */}
       <Route
         path="/dashboard"
         element={
@@ -50,14 +53,82 @@ function AppRoutes() {
         }
       />
       
-      {/* Placeholder routes for future pages */}
       <Route
         path="/alunos"
         element={
           <ProtectedRoute>
-            <div>Página de Alunos - Em desenvolvimento</div>
+            <div className="p-8 text-center">
+              <h1 className="text-2xl font-bold mb-4">Página de Alunos</h1>
+              <p className="text-muted-foreground">Em desenvolvimento</p>
+            </div>
           </ProtectedRoute>
         }
+      />
+      
+      <Route
+        path="/exercicios"
+        element={
+          <ProtectedRoute>
+            <div className="p-8 text-center">
+              <h1 className="text-2xl font-bold mb-4">Página de Exercícios</h1>
+              <p className="text-muted-foreground">Em desenvolvimento</p>
+            </div>
+          </ProtectedRoute>
+        }
+      />
+      
+      <Route
+        path="/treinos"
+        element={
+          <ProtectedRoute>
+            <div className="p-8 text-center">
+              <h1 className="text-2xl font-bold mb-4">Página de Treinos</h1>
+              <p className="text-muted-foreground">Em desenvolvimento</p>
+            </div>
+          </ProtectedRoute>
+        }
+      />
+      
+      <Route
+        path="/periodizacoes"
+        element={
+          <ProtectedRoute>
+            <div className="p-8 text-center">
+              <h1 className="text-2xl font-bold mb-4">Página de Periodizações</h1>
+              <p className="text-muted-foreground">Em desenvolvimento</p>
+            </div>
+          </ProtectedRoute>
+        }
+      />
+      
+      <Route
+        path="/sessoes"
+        element={
+          <ProtectedRoute>
+            <div className="p-8 text-center">
+              <h1 className="text-2xl font-bold mb-4">Página de Sessões</h1>
+              <p className="text-muted-foreground">Em desenvolvimento</p>
+            </div>
+          </ProtectedRoute>
+        }
+      />
+      
+      <Route
+        path="/configuracoes"
+        element={
+          <ProtectedRoute>
+            <div className="p-8 text-center">
+              <h1 className="text-2xl font-bold mb-4">Configurações</h1>
+              <p className="text-muted-foreground">Em desenvolvimento</p>
+            </div>
+          </ProtectedRoute>
+        }
+      />
+      
+      {/* Root redirect */}
+      <Route 
+        path="/" 
+        element={user ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />} 
       />
       
       <Route path="*" element={<NotFound />} />
