@@ -31,7 +31,7 @@ export default function Alunos() {
     isCreating,
     isUpdating,
     isDeleting 
-  } = useAlunos({ search, objetivo: objetivoFilter });
+  } = useAlunos({ search, objetivo: objetivoFilter === 'all' ? '' : objetivoFilter });
 
   const handleCreateAluno = (data: any) => {
     createAluno(data);
@@ -107,7 +107,7 @@ export default function Alunos() {
                 <SelectValue placeholder="Filtrar por objetivo" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos os objetivos</SelectItem>
+                <SelectItem value="all">Todos os objetivos</SelectItem>
                 {objetivos.map((objetivo) => (
                   <SelectItem key={objetivo} value={objetivo}>
                     {objetivo}
