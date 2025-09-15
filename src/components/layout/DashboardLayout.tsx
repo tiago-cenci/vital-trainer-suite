@@ -1,6 +1,7 @@
 import React from 'react';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { DashboardSidebar } from './DashboardSidebar';
+import { UserProfile } from './UserProfile';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 
 interface DashboardLayoutProps {
@@ -42,9 +43,7 @@ export function DashboardLayout({ children, breadcrumbs = [] }: DashboardLayoutP
               </div>
               
               <div className="flex items-center gap-4">
-                <div className="text-sm text-muted-foreground">
-                  VitalTrainer Pro
-                </div>
+                <UserProfile />
               </div>
             </div>
           </header>
