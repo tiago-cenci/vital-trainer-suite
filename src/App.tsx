@@ -9,6 +9,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import Dashboard from "./pages/Dashboard";
+import Alunos from "./pages/Alunos";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -57,10 +58,7 @@ function AppRoutes() {
         path="/alunos"
         element={
           <ProtectedRoute>
-            <div className="p-8 text-center">
-              <h1 className="text-2xl font-bold mb-4">Página de Alunos</h1>
-              <p className="text-muted-foreground">Em desenvolvimento</p>
-            </div>
+            <Alunos />
           </ProtectedRoute>
         }
       />
