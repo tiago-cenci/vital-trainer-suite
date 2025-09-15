@@ -22,15 +22,15 @@ export default function Alunos() {
   const [deletingAluno, setDeletingAluno] = useState<Aluno | null>(null);
   const [assinaturasAluno, setAssinaturasAluno] = useState<Aluno | null>(null);
 
-  const { 
-    alunos, 
-    loading, 
-    createAluno, 
-    updateAluno, 
+  const {
+    alunos,
+    loading,
+    createAluno,
+    updateAluno,
     deleteAluno,
     isCreating,
     isUpdating,
-    isDeleting 
+    isDeleting
   } = useAlunos({ search, objetivo: objetivoFilter === 'all' ? '' : objetivoFilter });
 
   const handleCreateAluno = (data: any) => {
@@ -66,7 +66,7 @@ export default function Alunos() {
   const objetivos = Array.from(new Set(alunos.map(a => a.objetivo).filter(Boolean)));
 
   return (
-    <DashboardLayout 
+    <DashboardLayout
       breadcrumbs={[
         { label: 'Dashboard', href: '/dashboard' },
         { label: 'Alunos' }
@@ -133,7 +133,7 @@ export default function Alunos() {
               {search || objetivoFilter ? 'Nenhum aluno encontrado' : 'Nenhum aluno cadastrado'}
             </h3>
             <p className="text-muted-foreground mb-6">
-              {search || objetivoFilter 
+              {search || objetivoFilter
                 ? 'Tente ajustar os filtros de busca'
                 : 'Comece cadastrando seu primeiro aluno'
               }
@@ -161,33 +161,27 @@ export default function Alunos() {
 
         {/* Form Modal */}
         <Dialog open={showForm} onOpenChange={(open) => !open && handleCloseForm()}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                {editingAluno ? 'Editar Aluno' : 'Novo Aluno'}
-              </DialogTitle>
-            </DialogHeader>
-            <div className="mt-6">
-              <AlunoForm
-                aluno={editingAluno}
-                onSubmit={editingAluno ? handleUpdateAluno : handleCreateAluno}
-                onCancel={handleCloseForm}
-                isSubmitting={isCreating || isUpdating}
-              />
-            </div>
+          <DialogContent className="max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <AlunoForm
+              aluno={editingAluno}
+              onSubmit={editingAluno ? handleUpdateAluno : handleCreateAluno}
+              onCancel={handleCloseForm}
+              isSubmitting={isCreating || isUpdating}
+            />
           </DialogContent>
         </Dialog>
 
+
         {/* Delete Confirmation */}
-        <AlertDialog 
-          open={!!deletingAluno} 
+        <AlertDialog
+          open={!!deletingAluno}
           onOpenChange={(open) => !open && setDeletingAluno(null)}
         >
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
               <AlertDialogDescription>
-                Tem certeza que deseja excluir o aluno <strong>{deletingAluno?.nome}</strong>? 
+                Tem certeza que deseja excluir o aluno <strong>{deletingAluno?.nome}</strong>?
                 Esta ação não pode ser desfeita e todos os dados relacionados serão perdidos.
               </AlertDialogDescription>
             </AlertDialogHeader>

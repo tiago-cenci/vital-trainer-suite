@@ -11,6 +11,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import Dashboard from "./pages/Dashboard";
 import Alunos from "./pages/Alunos";
 import NotFound from "./pages/NotFound";
+import Exercicios from "./pages/Exercicios";
 
 const queryClient = new QueryClient();
 
@@ -31,19 +32,19 @@ function AppRoutes() {
   return (
     <Routes>
       {/* Auth routes - redirect to dashboard if already authenticated */}
-      <Route 
-        path="/login" 
-        element={user ? <Navigate to="/dashboard" replace /> : <Login />} 
+      <Route
+        path="/login"
+        element={user ? <Navigate to="/dashboard" replace /> : <Login />}
       />
-      <Route 
-        path="/register" 
-        element={user ? <Navigate to="/dashboard" replace /> : <Register />} 
+      <Route
+        path="/register"
+        element={user ? <Navigate to="/dashboard" replace /> : <Register />}
       />
-      <Route 
-        path="/forgot-password" 
-        element={user ? <Navigate to="/dashboard" replace /> : <ForgotPassword />} 
+      <Route
+        path="/forgot-password"
+        element={user ? <Navigate to="/dashboard" replace /> : <ForgotPassword />}
       />
-      
+
       {/* Protected routes */}
       <Route
         path="/dashboard"
@@ -53,7 +54,7 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-      
+
       <Route
         path="/alunos"
         element={
@@ -62,19 +63,16 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-      
+
       <Route
         path="/exercicios"
         element={
           <ProtectedRoute>
-            <div className="p-8 text-center">
-              <h1 className="text-2xl font-bold mb-4">Página de Exercícios</h1>
-              <p className="text-muted-foreground">Em desenvolvimento</p>
-            </div>
+            <Exercicios />
           </ProtectedRoute>
         }
       />
-      
+
       <Route
         path="/treinos"
         element={
@@ -86,7 +84,7 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-      
+
       <Route
         path="/periodizacoes"
         element={
@@ -98,7 +96,7 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-      
+
       <Route
         path="/sessoes"
         element={
@@ -110,7 +108,7 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-      
+
       <Route
         path="/configuracoes"
         element={
@@ -122,13 +120,13 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-      
+
       {/* Root redirect */}
-      <Route 
-        path="/" 
-        element={user ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />} 
+      <Route
+        path="/"
+        element={user ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />}
       />
-      
+
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
