@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import Alunos from "./pages/Alunos";
 import NotFound from "./pages/NotFound";
 import Exercicios from "./pages/Exercicios";
+import Periodizacoes from "./pages/Periodizacoes";
 
 const queryClient = new QueryClient();
 
@@ -89,10 +90,7 @@ function AppRoutes() {
         path="/periodizacoes"
         element={
           <ProtectedRoute>
-            <div className="p-8 text-center">
-              <h1 className="text-2xl font-bold mb-4">Página de Periodizações</h1>
-              <p className="text-muted-foreground">Em desenvolvimento</p>
-            </div>
+            <Periodizacoes />
           </ProtectedRoute>
         }
       />
