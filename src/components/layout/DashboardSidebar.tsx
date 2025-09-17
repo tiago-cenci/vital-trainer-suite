@@ -33,7 +33,6 @@ const menuItems = [
   { title: 'Treinos', url: '/treinos', icon: ClipboardList },
   { title: 'Periodizações', url: '/periodizacoes', icon: Target },
   { title: 'Tipos de Microciclos', url: '/tipos-microciclos', icon: Settings },
-  { title: 'Sessões', url: '/sessoes', icon: Calendar },
 ];
 
 export function DashboardSidebar() {
