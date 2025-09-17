@@ -13,6 +13,7 @@ import Alunos from "./pages/Alunos";
 import NotFound from "./pages/NotFound";
 import Exercicios from "./pages/Exercicios";
 import Periodizacoes from "./pages/Periodizacoes";
+import TiposMicrociclos from "./pages/TiposMicrociclos";
 
 const queryClient = new QueryClient();
 
@@ -91,6 +92,15 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <Periodizacoes />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/tipos-microciclos"
+        element={
+          <ProtectedRoute>
+            <TiposMicrociclos />
           </ProtectedRoute>
         }
       />

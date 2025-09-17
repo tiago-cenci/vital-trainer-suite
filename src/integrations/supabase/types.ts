@@ -187,23 +187,26 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
+          ordem: number
           periodizacao_id: string | null
           semana_num: number
-          tipo_semana: string
+          tipo_microciclo_id: string | null
         }
         Insert: {
           created_at?: string | null
           id?: string
+          ordem?: number
           periodizacao_id?: string | null
           semana_num: number
-          tipo_semana: string
+          tipo_microciclo_id?: string | null
         }
         Update: {
           created_at?: string | null
           id?: string
+          ordem?: number
           periodizacao_id?: string | null
           semana_num?: number
-          tipo_semana?: string
+          tipo_microciclo_id?: string | null
         }
         Relationships: [
           {
@@ -211,6 +214,13 @@ export type Database = {
             columns: ["periodizacao_id"]
             isOneToOne: false
             referencedRelation: "periodizacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "periodizacoes_semanas_tipo_microciclo_id_fkey"
+            columns: ["tipo_microciclo_id"]
+            isOneToOne: false
+            referencedRelation: "tipos_microciclos"
             referencedColumns: ["id"]
           },
         ]
@@ -308,6 +318,74 @@ export type Database = {
             columns: ["sessao_id"]
             isOneToOne: false
             referencedRelation: "sessoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tipos_microciclos: {
+        Row: {
+          created_at: string
+          descricao: string | null
+          id: string
+          nome: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      tipos_microciclos_config: {
+        Row: {
+          created_at: string
+          descanso_max: number
+          descanso_min: number
+          id: string
+          rep_max: number
+          rep_min: number
+          tipo_microciclo_id: string
+          tipo_serie: Database["public"]["Enums"]["tipo_serie"]
+        }
+        Insert: {
+          created_at?: string
+          descanso_max: number
+          descanso_min: number
+          id?: string
+          rep_max: number
+          rep_min: number
+          tipo_microciclo_id: string
+          tipo_serie: Database["public"]["Enums"]["tipo_serie"]
+        }
+        Update: {
+          created_at?: string
+          descanso_max?: number
+          descanso_min?: number
+          id?: string
+          rep_max?: number
+          rep_min?: number
+          tipo_microciclo_id?: string
+          tipo_serie?: Database["public"]["Enums"]["tipo_serie"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tipos_microciclos_config_tipo_microciclo_id_fkey"
+            columns: ["tipo_microciclo_id"]
+            isOneToOne: false
+            referencedRelation: "tipos_microciclos"
             referencedColumns: ["id"]
           },
         ]

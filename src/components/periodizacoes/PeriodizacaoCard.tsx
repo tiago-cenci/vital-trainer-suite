@@ -15,7 +15,7 @@ interface PeriodizacaoCardProps {
 
 export function PeriodizacaoCard({ periodizacao, onEdit, onDelete }: PeriodizacaoCardProps) {
   const totalSemanas = periodizacao.semanas.length;
-  const tiposSemana = Array.from(new Set(periodizacao.semanas.map(s => s.tipo_semana)));
+  const tiposMicrociclos = Array.from(new Set(periodizacao.semanas.map(s => s.tipos_microciclos?.nome).filter(Boolean)));
 
   return (
     <Card className="group hover:shadow-md transition-all duration-200 border-border/50 hover:border-primary/20">
@@ -40,16 +40,16 @@ export function PeriodizacaoCard({ periodizacao, onEdit, onDelete }: Periodizaca
             <p className="text-2xl font-bold text-primary">{totalSemanas}</p>
           </div>
           <div className="space-y-1">
-            <p className="text-sm font-medium text-muted-foreground">Tipos de Semana</p>
+            <p className="text-sm font-medium text-muted-foreground">Tipos de Microciclos</p>
             <div className="flex flex-wrap gap-1">
-              {tiposSemana.slice(0, 2).map((tipo) => (
+              {tiposMicrociclos.slice(0, 2).map((tipo) => (
                 <Badge key={tipo} variant="secondary" className="text-xs">
                   {tipo}
                 </Badge>
               ))}
-              {tiposSemana.length > 2 && (
+              {tiposMicrociclos.length > 2 && (
                 <Badge variant="outline" className="text-xs">
-                  +{tiposSemana.length - 2}
+                  +{tiposMicrociclos.length - 2}
                 </Badge>
               )}
             </div>
@@ -60,13 +60,13 @@ export function PeriodizacaoCard({ periodizacao, onEdit, onDelete }: Periodizaca
           <div className="space-y-2">
             <p className="text-sm font-medium text-muted-foreground">Resumo das Semanas</p>
             <div className="space-y-1 max-h-20 overflow-y-auto">
-              {periodizacao.semanas.slice(0, 3).map((semana) => (
+              {periodizacao.semanas.slice(0, 3).map((semana, index) => (
                 <div key={semana.id} className="flex items-center justify-between text-xs">
                   <span className="text-muted-foreground">
-                    Semana {semana.semana_num} - {semana.tipo_semana}
+                    Semana {index + 1} - {semana.tipos_microciclos?.nome || 'N/A'}
                   </span>
                   <Badge variant="outline" className="text-xs">
-                    {semana.config.length} config{semana.config.length !== 1 ? 's' : ''}
+                    {semana.tipos_microciclos?.tipos_microciclos_config?.length || 0} configs
                   </Badge>
                 </div>
               ))}

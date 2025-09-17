@@ -9,20 +9,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, Plus, Trash2, Target } from 'lucide-react';
-
-const configSchema = z.object({
-  tipo_serie: z.enum(['WORK SET', 'WARM-UP', 'FEEDER'], { required_error: 'Tipo de série é obrigatório' }),
-  rep_min: z.coerce.number().min(1, 'Mínimo de repetições deve ser maior que 0'),
-  rep_max: z.coerce.number().min(1, 'Máximo de repetições deve ser maior que 0'),
-  descanso_min: z.coerce.number().min(0, 'Descanso mínimo deve ser 0 ou maior'),
-  descanso_max: z.coerce.number().min(0, 'Descanso máximo deve ser 0 ou maior'),
-});
+import { Loader2, Plus, Trash2, Target, ArrowUp, ArrowDown } from 'lucide-react';
+import { useTiposMicrociclos } from '@/hooks/useTiposMicrociclos';
+import { toast } from '@/hooks/use-toast';
 
 const semanaSchema = z.object({
-  semana_num: z.coerce.number().min(1, 'Número da semana deve ser maior que 0'),
-  tipo_semana: z.string().min(1, 'Tipo de semana é obrigatório'),
-  config: z.array(configSchema).min(1, 'Pelo menos uma configuração é obrigatória'),
+  tipo_microciclo_id: z.string().min(1, 'Tipo de microciclo é obrigatório'),
+  ordem: z.number().min(1, 'Ordem deve ser maior que 0'),
 });
 
 const periodizacaoSchema = z.object({
@@ -38,13 +31,8 @@ interface PeriodizacaoFormProps {
   isSubmitting?: boolean;
 }
 
-const tipoSerieLabels = {
-  'WORK SET': 'Work Set (Trabalho)',
-  'WARM-UP': 'Warm-up (Aquecimento)',
-  'FEEDER': 'Feeder (Alimentação)'
-};
-
 export function PeriodizacaoForm({ onSubmit, onCancel, isSubmitting = false }: PeriodizacaoFormProps) {
+  const { tiposMicrociclos, loading: loadingTipos } = useTiposMicrociclos({});
   const {
     register,
     control,
@@ -56,28 +44,42 @@ export function PeriodizacaoForm({ onSubmit, onCancel, isSubmitting = false }: P
     resolver: zodResolver(periodizacaoSchema),
     defaultValues: {
       nome: '',
-      semanas: [
-        {
-          semana_num: 1,
-          tipo_semana: 'Básica',
-          config: [
-            {
-              tipo_serie: 'WORK SET',
-              rep_min: 8,
-              rep_max: 12,
-              descanso_min: 60,
-              descanso_max: 90,
-            }
-          ]
-        }
-      ],
+      semanas: [],
     },
   });
 
-  const { fields: semanas, append: addSemana, remove: removeSemana } = useFieldArray({
+  const { fields: semanas, append: addSemana, remove: removeSemana, move: moveSemana } = useFieldArray({
     control,
     name: 'semanas',
   });
+
+  const addNewSemana = () => {
+    if (tiposMicrociclos.length === 0) {
+      toast({
+        title: 'Erro',
+        description: 'Você precisa criar pelo menos um tipo de microciclo primeiro.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    addSemana({
+      tipo_microciclo_id: tiposMicrociclos[0].id,
+      ordem: semanas.length + 1,
+    });
+  };
+
+  const moveUp = (index: number) => {
+    if (index > 0) {
+      moveSemana(index, index - 1);
+    }
+  };
+
+  const moveDown = (index: number) => {
+    if (index < semanas.length - 1) {
+      moveSemana(index, index + 1);
+    }
+  };
 
   return (
     <Card className="w-full max-w-4xl">
@@ -110,22 +112,18 @@ export function PeriodizacaoForm({ onSubmit, onCancel, isSubmitting = false }: P
           {/* Semanas */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-foreground">Semanas da Periodização</h3>
+              <div>
+                <h3 className="text-lg font-semibold text-foreground">Sequência de Semanas</h3>
+                <p className="text-sm text-muted-foreground">
+                  Selecione os tipos de microciclos e defina a ordem das semanas
+                </p>
+              </div>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => addSemana({
-                  semana_num: semanas.length + 1,
-                  tipo_semana: '',
-                  config: [{
-                    tipo_serie: 'WORK SET',
-                    rep_min: 8,
-                    rep_max: 12,
-                    descanso_min: 60,
-                    descanso_max: 90,
-                  }]
-                })}
+                onClick={addNewSemana}
+                disabled={loadingTipos || tiposMicrociclos.length === 0}
                 className="gap-2"
               >
                 <Plus className="h-4 w-4" />
@@ -133,131 +131,134 @@ export function PeriodizacaoForm({ onSubmit, onCancel, isSubmitting = false }: P
               </Button>
             </div>
 
+            {loadingTipos && (
+              <div className="text-center py-4">
+                <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" />
+                <p className="text-sm text-muted-foreground mt-2">Carregando tipos de microciclos...</p>
+              </div>
+            )}
+
+            {!loadingTipos && tiposMicrociclos.length === 0 && (
+              <div className="text-center py-8 border border-dashed border-border rounded-lg">
+                <p className="text-muted-foreground mb-4">
+                  Você precisa criar pelo menos um tipo de microciclo primeiro.
+                </p>
+                <Button variant="outline" onClick={onCancel}>
+                  Ir para Tipos de Microciclos
+                </Button>
+              </div>
+            )}
+
             {errors.semanas && (
               <p className="text-sm text-destructive">{errors.semanas.message}</p>
             )}
 
-            <div className="space-y-4 max-h-96 overflow-y-auto">
-              {semanas.map((semana, semanaIndex) => (
-                <Card key={semana.id} className="border-border/50">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-medium">Semana {semanaIndex + 1}</h4>
-                      {semanas.length > 1 && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeSemana(semanaIndex)}
-                          className="text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label>Número da Semana</Label>
-                        <Input
-                          type="number"
-                          {...register(`semanas.${semanaIndex}.semana_num` as const)}
-                          min="1"
-                        />
-                        {errors.semanas?.[semanaIndex]?.semana_num && (
-                          <p className="text-sm text-destructive">
-                            {errors.semanas[semanaIndex]?.semana_num?.message}
-                          </p>
-                        )}
-                      </div>
+            {!loadingTipos && tiposMicrociclos.length > 0 && (
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {semanas.length === 0 ? (
+                  <div className="text-center py-8 border border-dashed border-border rounded-lg">
+                    <p className="text-muted-foreground mb-4">
+                      Nenhuma semana adicionada ainda.
+                    </p>
+                    <Button variant="outline" size="sm" onClick={addNewSemana} className="gap-2">
+                      <Plus className="h-4 w-4" />
+                      Adicionar Primeira Semana
+                    </Button>
+                  </div>
+                ) : (
+                  semanas.map((semana, semanaIndex) => {
+                    const tipoMicrociclo = tiposMicrociclos.find(t => t.id === watch(`semanas.${semanaIndex}.tipo_microciclo_id`));
+                    
+                    return (
+                      <Card key={semana.id} className="border-border/50">
+                        <CardContent className="p-4">
+                          <div className="flex items-center gap-3">
+                            <div className="flex flex-col gap-1">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => moveUp(semanaIndex)}
+                                disabled={semanaIndex === 0}
+                                className="h-6 w-6 p-0"
+                              >
+                                <ArrowUp className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => moveDown(semanaIndex)}
+                                disabled={semanaIndex === semanas.length - 1}
+                                className="h-6 w-6 p-0"
+                              >
+                                <ArrowDown className="h-3 w-3" />
+                              </Button>
+                            </div>
 
-                      <div className="space-y-2">
-                        <Label>Tipo de Semana</Label>
-                        <Input
-                          {...register(`semanas.${semanaIndex}.tipo_semana` as const)}
-                          placeholder="Ex: Básica, Intensiva, Deload..."
-                        />
-                        {errors.semanas?.[semanaIndex]?.tipo_semana && (
-                          <p className="text-sm text-destructive">
-                            {errors.semanas[semanaIndex]?.tipo_semana?.message}
-                          </p>
-                        )}
-                      </div>
-                    </div>
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className="px-2 py-1">
+                                Semana {semanaIndex + 1}
+                              </Badge>
+                            </div>
 
-                    {/* Configurações da Semana */}
-                    <div className="space-y-3">
-                      <Label className="text-sm font-medium">Configurações de Treino</Label>
+                            <div className="flex-1">
+                              <Select
+                                value={watch(`semanas.${semanaIndex}.tipo_microciclo_id`)}
+                                onValueChange={(value) => {
+                                  setValue(`semanas.${semanaIndex}.tipo_microciclo_id`, value);
+                                }}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Selecione o tipo de microciclo" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {tiposMicrociclos.map((tipo) => (
+                                    <SelectItem key={tipo.id} value={tipo.id}>
+                                      {tipo.nome}
+                                      {tipo.descricao && ` - ${tipo.descricao}`}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              {errors.semanas?.[semanaIndex]?.tipo_microciclo_id && (
+                                <p className="text-sm text-destructive mt-1">
+                                  {errors.semanas[semanaIndex]?.tipo_microciclo_id?.message}
+                                </p>
+                              )}
+                            </div>
 
-                      {/* Para simplificar, vamos mostrar apenas uma config por semana por enquanto */}
-                      <div className="grid gap-3 p-3 border rounded-md border-border/50 bg-muted/20">
-                        <div className="grid gap-3 md:grid-cols-3">
-                          <div className="space-y-2">
-                            <Label className="text-xs">Tipo de Série</Label>
-                            <Select
-                              value={watch(`semanas.${semanaIndex}.config.0.tipo_serie`)}
-                              onValueChange={(value) => {
-                                setValue(`semanas.${semanaIndex}.config.0.tipo_serie`, value as 'WORK SET' | 'WARM-UP' | 'FEEDER');
-                              }}
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeSemana(semanaIndex)}
+                              className="text-destructive hover:text-destructive"
                             >
-                              <SelectTrigger className="h-8">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="WORK SET">Work Set</SelectItem>
-                                <SelectItem value="WARM-UP">Warm-up</SelectItem>
-                                <SelectItem value="FEEDER">Feeder</SelectItem>
-                              </SelectContent>
-                            </Select>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
 
-                          <div className="space-y-2">
-                            <Label className="text-xs">Repetições (min-max)</Label>
-                            <div className="flex gap-1">
-                              <Input
-                                type="number"
-                                className="h-8"
-                                {...register(`semanas.${semanaIndex}.config.0.rep_min` as const)}
-                                placeholder="Min"
-                                min="1"
-                              />
-                              <Input
-                                type="number"
-                                className="h-8"
-                                {...register(`semanas.${semanaIndex}.config.0.rep_max` as const)}
-                                placeholder="Max"
-                                min="1"
-                              />
+                          {tipoMicrociclo && (
+                            <div className="mt-3 pl-8">
+                              <div className="text-xs text-muted-foreground space-y-1">
+                                <p className="font-medium">Configurações:</p>
+                                {tipoMicrociclo.config.map((config) => (
+                                  <div key={config.id} className="flex gap-4">
+                                    <span className="font-medium">{config.tipo_serie}:</span>
+                                    <span>{config.rep_min}-{config.rep_max} reps, {config.descanso_min}s-{config.descanso_max}s</span>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label className="text-xs">Descanso (seg, min-max)</Label>
-                            <div className="flex gap-1">
-                              <Input
-                                type="number"
-                                className="h-8"
-                                {...register(`semanas.${semanaIndex}.config.0.descanso_min` as const)}
-                                placeholder="Min"
-                                min="0"
-                              />
-                              <Input
-                                type="number"
-                                className="h-8"
-                                {...register(`semanas.${semanaIndex}.config.0.descanso_max` as const)}
-                                placeholder="Max"
-                                min="0"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })
+                )}
+              </div>
+            )}
           </div>
 
           {/* Botões */}

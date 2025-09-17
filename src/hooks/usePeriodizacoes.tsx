@@ -11,8 +11,8 @@ type PeriodizacaoUpdate = TablesUpdate<'periodizacoes'>;
 type PeriodizacaoSemana = Tables<'periodizacoes_semanas'>;
 type PeriodizacaoSemanaInsert = TablesInsert<'periodizacoes_semanas'>;
 
-type PeriodizacaoSemanaConfig = Tables<'periodizacoes_semana_config'>;
-type PeriodizacaoSemanaConfigInsert = TablesInsert<'periodizacoes_semana_config'>;
+type TipoMicrociclo = Tables<'tipos_microciclos'>;
+type TipoMicrocicloConfig = Tables<'tipos_microciclos_config'>;
 
 export interface PeriodizacaoFilters {
   search?: string;
@@ -20,7 +20,9 @@ export interface PeriodizacaoFilters {
 
 export interface PeriodizacaoCompleta extends Periodizacao {
   semanas: (PeriodizacaoSemana & {
-    config: PeriodizacaoSemanaConfig[];
+    tipos_microciclos: TipoMicrociclo & {
+      tipos_microciclos_config: TipoMicrocicloConfig[];
+    };
   })[];
 }
 
@@ -39,7 +41,10 @@ export function usePeriodizacoes(filters: PeriodizacaoFilters = {}) {
           *,
           periodizacoes_semanas (
             *,
-            periodizacoes_semana_config (*)
+            tipos_microciclos (
+              *,
+              tipos_microciclos_config (*)
+            )
           )
         `)
         .eq('user_id', user.id)
@@ -52,13 +57,9 @@ export function usePeriodizacoes(filters: PeriodizacaoFilters = {}) {
       const { data, error } = await query;
       if (error) throw error;
 
-      // Transform data to match interface
       return (data || []).map(p => ({
         ...p,
-        semanas: (p.periodizacoes_semanas || []).map(s => ({
-          ...s,
-          config: s.periodizacoes_semana_config || []
-        }))
+        semanas: p.periodizacoes_semanas || []
       }));
     },
     enabled: !!user,
@@ -68,15 +69,8 @@ export function usePeriodizacoes(filters: PeriodizacaoFilters = {}) {
     mutationFn: async (data: {
       nome: string;
       semanas: Array<{
-        semana_num: number;
-        tipo_semana: string;
-        config: Array<{
-          tipo_serie: 'WORK SET' | 'WARM-UP' | 'FEEDER';
-          rep_min: number;
-          rep_max: number;
-          descanso_min: number;
-          descanso_max: number;
-        }>;
+        tipo_microciclo_id: string;
+        ordem: number;
       }>;
     }) => {
       if (!user) throw new Error('Usuário não autenticado');
@@ -91,32 +85,18 @@ export function usePeriodizacoes(filters: PeriodizacaoFilters = {}) {
       if (periodizacaoError) throw periodizacaoError;
 
       // Create weeks
-      for (const semana of data.semanas) {
-        const { data: semanaData, error: semanaError } = await supabase
+      for (let i = 0; i < data.semanas.length; i++) {
+        const semana = data.semanas[i];
+        const { error: semanaError } = await supabase
           .from('periodizacoes_semanas')
           .insert({
             periodizacao_id: periodizacao.id,
-            semana_num: semana.semana_num,
-            tipo_semana: semana.tipo_semana
-          })
-          .select()
-          .single();
+            semana_num: i + 1,
+            tipo_microciclo_id: semana.tipo_microciclo_id,
+            ordem: semana.ordem
+          });
 
         if (semanaError) throw semanaError;
-
-        // Create configs for each week
-        if (semana.config.length > 0) {
-          const configs = semana.config.map(config => ({
-            semana_id: semanaData.id,
-            ...config
-          }));
-
-          const { error: configError } = await supabase
-            .from('periodizacoes_semana_config')
-            .insert(configs);
-
-          if (configError) throw configError;
-        }
       }
 
       return periodizacao;
@@ -187,7 +167,10 @@ export function usePeriodizacao(id: string) {
           *,
           periodizacoes_semanas (
             *,
-            periodizacoes_semana_config (*)
+            tipos_microciclos (
+              *,
+              tipos_microciclos_config (*)
+            )
           )
         `)
         .eq('id', id)
@@ -198,10 +181,7 @@ export function usePeriodizacao(id: string) {
 
       return {
         ...data,
-        semanas: (data.periodizacoes_semanas || []).map(s => ({
-          ...s,
-          config: s.periodizacoes_semana_config || []
-        }))
+        semanas: data.periodizacoes_semanas || []
       };
     },
     enabled: !!user && !!id,

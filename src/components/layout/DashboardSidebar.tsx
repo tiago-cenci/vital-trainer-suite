@@ -32,6 +32,7 @@ const menuItems = [
   { title: 'Exercícios', url: '/exercicios', icon: Dumbbell },
   { title: 'Treinos', url: '/treinos', icon: ClipboardList },
   { title: 'Periodizações', url: '/periodizacoes', icon: Target },
+  { title: 'Tipos de Microciclos', url: '/tipos-microciclos', icon: Settings },
   { title: 'Sessões', url: '/sessoes', icon: Calendar },
 ];
 
@@ -89,14 +90,14 @@ export function DashboardSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Configurações</SidebarGroupLabel>
+          <SidebarGroupLabel>Outras Configurações</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <NavLink to="/configuracoes" className={getNavCls}>
                     <Settings className="h-4 w-4" />
-                    {!collapsed && <span>Configurações</span>}
+                    {!collapsed && <span>Sistema</span>}
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
