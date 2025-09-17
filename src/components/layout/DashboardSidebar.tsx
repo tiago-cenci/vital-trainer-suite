@@ -1,9 +1,9 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { 
-  Users, 
-  Dumbbell, 
-  ClipboardList, 
+import {
+  Users,
+  Dumbbell,
+  ClipboardList,
   Calendar,
   Settings,
   BarChart3,
@@ -30,7 +30,10 @@ const menuItems = [
   { title: 'Dashboard', url: '/dashboard', icon: BarChart3 },
   { title: 'Alunos', url: '/alunos', icon: Users },
   { title: 'Exercícios', url: '/exercicios', icon: Dumbbell },
-  { title: 'Treinos', url: '/treinos', icon: ClipboardList },
+  { title: 'Treinos', url: '/treinos', icon: ClipboardList }
+];
+
+const configItems = [
   { title: 'Periodizações', url: '/periodizacoes', icon: Target },
   { title: 'Tipos de Microciclos', url: '/tipos-microciclos', icon: Settings },
 ];
@@ -44,8 +47,8 @@ export function DashboardSidebar() {
 
   const isActive = (path: string) => currentPath === path;
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
-    isActive 
-      ? "bg-sidebar-accent text-sidebar-primary-foreground font-medium" 
+    isActive
+      ? "bg-sidebar-accent text-sidebar-primary-foreground font-medium"
       : "hover:bg-sidebar-accent/50 text-sidebar-foreground";
 
   return (
@@ -89,17 +92,19 @@ export function DashboardSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Outras Configurações</SidebarGroupLabel>
+          <SidebarGroupLabel>Configurações</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <NavLink to="/configuracoes" className={getNavCls}>
-                    <Settings className="h-4 w-4" />
-                    {!collapsed && <span>Sistema</span>}
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              {configItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild>
+                    <NavLink to={item.url} end className={getNavCls}>
+                      <item.icon className="h-4 w-4" />
+                      {!collapsed && <span>{item.title}</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
