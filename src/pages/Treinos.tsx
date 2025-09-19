@@ -8,12 +8,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Plus, Search, Users, ChevronDown, ChevronUp, Dumbbell, Calendar, Target, Settings2, Power, PowerOff, Edit, Copy, Trash2, Filter } from 'lucide-react';
+import { Plus, Search, Users, ChevronDown, ChevronUp, Dumbbell, Filter, Target } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { TreinoCard } from '@/components/treinos/TreinoCard';
 import { TreinoForm } from '@/components/treinos/TreinoForm';
 import { useTreinos, type TreinoFilters, type TreinoCompleto } from '@/hooks/useTreinos';
 import { useAlunos } from '@/hooks/useAlunos';
+
+const ALL = '__ALL__'; // token seguro para "Todos"
 
 export default function Treinos() {
   const [search, setSearch] = useState('');
@@ -45,7 +47,7 @@ export default function Treinos() {
 
   // Group treinos by aluno
   const treinosPorAluno = treinos.reduce((acc, treino) => {
-    const alunoId = treino.aluno_id;
+    const alunoId = String(treino.aluno_id);
     if (!acc[alunoId]) {
       acc[alunoId] = {
         aluno: treino.alunos,
@@ -164,61 +166,74 @@ export default function Treinos() {
             </div>
             
             <div className="flex gap-2">
+              {/* Filtro: Aluno */}
               <Select
-                value={filters.aluno_id || ""}
+                value={filters.aluno_id ?? undefined}
                 onValueChange={(value) => 
-                  setFilters(prev => ({ ...prev, aluno_id: value || undefined }))
+                  setFilters(prev => ({ ...prev, aluno_id: value === ALL ? undefined : value }))
                 }
               >
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-[200px]">
                   <Users className="h-4 w-4 mr-2" />
                   <SelectValue placeholder="Todos os alunos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os alunos</SelectItem>
-                  {alunos.map((aluno) => (
-                    <SelectItem key={aluno.id} value={aluno.id}>
-                      {aluno.nome}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value={ALL}>Todos os alunos</SelectItem>
+                  {(alunos ?? [])
+                    .filter(a => a?.id && a?.nome)
+                    .map((aluno) => (
+                      <SelectItem key={String(aluno.id)} value={String(aluno.id)}>
+                        {aluno.nome}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
 
+              {/* Filtro: Status ativo */}
               <Select
-                value={filters.ativo === undefined ? "" : filters.ativo.toString()}
+                value={
+                  filters.ativo === undefined
+                    ? undefined
+                    : String(filters.ativo)
+                }
                 onValueChange={(value) => 
                   setFilters(prev => ({ 
                     ...prev, 
-                    ativo: value === "" ? undefined : value === "true" 
+                    ativo: value === ALL ? undefined : value === 'true' 
                   }))
                 }
               >
-                <SelectTrigger className="w-[140px]">
+                <SelectTrigger className="w-[160px]">
                   <Filter className="h-4 w-4 mr-2" />
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
+                  <SelectItem value={ALL}>Todos</SelectItem>
                   <SelectItem value="true">Ativos</SelectItem>
                   <SelectItem value="false">Inativos</SelectItem>
                 </SelectContent>
               </Select>
 
+              {/* Filtro: Usa periodização */}
               <Select
-                value={filters.usa_periodizacao === undefined ? "" : filters.usa_periodizacao.toString()}
+                value={
+                  filters.usa_periodizacao === undefined
+                    ? undefined
+                    : String(filters.usa_periodizacao)
+                }
                 onValueChange={(value) => 
                   setFilters(prev => ({ 
                     ...prev, 
-                    usa_periodizacao: value === "" ? undefined : value === "true" 
+                    usa_periodizacao: value === ALL ? undefined : value === 'true' 
                   }))
                 }
               >
-                <SelectTrigger className="w-[160px]">
+                <SelectTrigger className="w-[190px]">
                   <Target className="h-4 w-4 mr-2" />
                   <SelectValue placeholder="Periodização" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas</SelectItem>
+                  <SelectItem value={ALL}>Todas</SelectItem>
                   <SelectItem value="true">Com periodização</SelectItem>
                   <SelectItem value="false">Sem periodização</SelectItem>
                 </SelectContent>
@@ -244,7 +259,7 @@ export default function Treinos() {
                             <Users className="h-5 w-5 text-primary" />
                           </div>
                           <div>
-                            <CardTitle className="text-lg">{aluno.nome}</CardTitle>
+                            <CardTitle className="text-lg">{aluno?.nome ?? '—'}</CardTitle>
                             <CardDescription>
                               {alunoTreinos.length} treino{alunoTreinos.length !== 1 ? 's' : ''}
                               {alunoTreinos.some(t => t.ativo) && (
@@ -269,13 +284,13 @@ export default function Treinos() {
                       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                         {alunoTreinos.map((treino) => (
                           <TreinoCard
-                            key={treino.id}
+                            key={String(treino.id)}
                             treino={treino}
-                            onEdit={(treino) => setEditingTreino(treino)}
-                            onDelete={(treino) => setDeletingTreino(treino)}
-                            onAtivar={(treino) => ativarTreino({ id: treino.id, aluno_id: treino.aluno_id })}
+                            onEdit={(t) => setEditingTreino(t)}
+                            onDelete={(t) => setDeletingTreino(t)}
+                            onAtivar={(t) => ativarTreino({ id: t.id, aluno_id: t.aluno_id })}
                             onDesativar={(id) => desativarTreino(id)}
-                            onDuplicar={(treino) => duplicarTreino(treino)}
+                            onDuplicar={(t) => duplicarTreino(t)}
                             isActivating={isActivating}
                             isDeactivating={isDeactivating}
                             isDuplicating={isDuplicating}

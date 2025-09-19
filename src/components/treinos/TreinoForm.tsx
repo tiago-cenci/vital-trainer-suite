@@ -4,11 +4,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ChevronLeft, ChevronRight, Users, Calendar, Dumbbell, Target, Plus, GripVertical } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Users, Calendar, Dumbbell, Target } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -22,8 +21,11 @@ const treinoSchema = z.object({
   aluno_id: z.string().min(1, 'Aluno é obrigatório'),
   sessoes_semanais: z.number().min(1, 'Mínimo 1 sessão por semana').max(7, 'Máximo 7 sessões por semana'),
   usar_periodizacao: z.boolean(),
-  periodizacao_id: z.string().optional(),
-});
+  periodizacao_id: z.string().uuid().optional(),
+}).refine(
+  (v) => !v.usar_periodizacao || !!v.periodizacao_id,
+  { message: 'Selecione a periodização', path: ['periodizacao_id'] }
+);
 
 type TreinoFormData = z.infer<typeof treinoSchema>;
 
@@ -59,62 +61,57 @@ export function TreinoForm({ treino, onSubmit, onCancel, isSubmitting }: TreinoF
     resolver: zodResolver(treinoSchema),
     defaultValues: {
       nome: '',
-      aluno_id: '',
+      aluno_id: undefined,           // <- nunca ""
       sessoes_semanais: 3,
       usar_periodizacao: false,
-      periodizacao_id: '',
+      periodizacao_id: undefined,    // <- nunca ""
     }
   });
 
   const watchedValues = watch();
-  const selectedPeriodizacao = periodizacoes.find(p => p.id === watchedValues.periodizacao_id);
+  const selectedPeriodizacao = periodizacoes.find(
+    (p) => p?.id && p.id === (watchedValues.periodizacao_id ?? '')
+  );
 
   // Initialize form when editing
   useEffect(() => {
     if (treino) {
       reset({
         nome: treino.nome,
-        aluno_id: treino.aluno_id,
-        sessoes_semanais: treino.sessoes_semanais || 3,
+        aluno_id: String(treino.aluno_id),
+        sessoes_semanais: treino.sessoes_semanais ?? 3,
         usar_periodizacao: !!treino.periodizacao_id,
-        periodizacao_id: treino.periodizacao_id || '',
+        periodizacao_id: treino.periodizacao_id ? String(treino.periodizacao_id) : undefined,
       });
       setUsarPeriodizacao(!!treino.periodizacao_id);
-      setSessoes(treino.sessoes.map((sessao, index) => ({
-        id: sessao.id,
-        nome: sessao.nome,
-        ordem: index + 1
-      })));
+      setSessoes(
+        (treino.sessoes ?? []).map((sessao, index) => ({
+          id: sessao.id ? String(sessao.id) : undefined,
+          nome: sessao.nome,
+          ordem: index + 1
+        }))
+      );
     }
   }, [treino, reset]);
 
-  // Generate default sessions when sessoes_semanais changes
+  // Generate default sessions when sessoes_semanais changes (create mode)
   useEffect(() => {
     if (!treino && watchedValues.sessoes_semanais && sessoes.length === 0) {
       const defaultSessions = Array.from({ length: watchedValues.sessoes_semanais }, (_, i) => ({
-        nome: String.fromCharCode(65 + i), // A, B, C, etc.
+        nome: String.fromCharCode(65 + i), // A, B, C, ...
         ordem: i + 1
       }));
       setSessoes(defaultSessions);
     }
   }, [watchedValues.sessoes_semanais, treino, sessoes.length]);
 
-  const handleNext = () => {
-    if (currentStep < 3) {
-      setCurrentStep(currentStep + 1);
-    }
-  };
-
-  const handlePrevious = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
+  const handleNext = () => setCurrentStep((s) => Math.min(3, s + 1));
+  const handlePrevious = () => setCurrentStep((s) => Math.max(1, s - 1));
 
   const handleFormSubmit = (data: TreinoFormData) => {
     const formData = {
       ...data,
-      periodizacao_id: data.usar_periodizacao ? data.periodizacao_id : null,
+      periodizacao_id: data.usar_periodizacao ? data.periodizacao_id ?? null : null,
       sessoes: sessoes
     };
     onSubmit(formData);
@@ -124,7 +121,7 @@ export function TreinoForm({ treino, onSubmit, onCancel, isSubmitting }: TreinoF
     setUsarPeriodizacao(checked);
     setValue('usar_periodizacao', checked);
     if (!checked) {
-      setValue('periodizacao_id', '');
+      setValue('periodizacao_id', undefined); // <- limpe para undefined
     }
   };
 
@@ -140,18 +137,20 @@ export function TreinoForm({ treino, onSubmit, onCancel, isSubmitting }: TreinoF
         <div className="space-y-2">
           <Label htmlFor="aluno_id">Aluno *</Label>
           <Select
-            value={watchedValues.aluno_id}
+            value={watchedValues.aluno_id ?? undefined}
             onValueChange={(value) => setValue('aluno_id', value)}
           >
             <SelectTrigger>
               <SelectValue placeholder="Selecione um aluno" />
             </SelectTrigger>
             <SelectContent>
-              {alunos.map((aluno) => (
-                <SelectItem key={aluno.id} value={aluno.id}>
-                  {aluno.nome}
-                </SelectItem>
-              ))}
+              {alunos
+                ?.filter(a => a?.id && a?.nome)
+                .map((aluno) => (
+                  <SelectItem key={String(aluno.id)} value={String(aluno.id)}>
+                    {aluno.nome}
+                  </SelectItem>
+                ))}
             </SelectContent>
           </Select>
           {errors.aluno_id && (
@@ -174,15 +173,15 @@ export function TreinoForm({ treino, onSubmit, onCancel, isSubmitting }: TreinoF
         <div className="space-y-2">
           <Label htmlFor="sessoes_semanais">Sessões por Semana *</Label>
           <Select
-            value={watchedValues.sessoes_semanais?.toString()}
-            onValueChange={(value) => setValue('sessoes_semanais', parseInt(value))}
+            value={watchedValues.sessoes_semanais?.toString() ?? undefined}
+            onValueChange={(value) => setValue('sessoes_semanais', parseInt(value, 10))}
           >
             <SelectTrigger>
-              <SelectValue />
+              <SelectValue placeholder="Qtd. de sessões" />
             </SelectTrigger>
             <SelectContent>
               {Array.from({ length: 7 }, (_, i) => i + 1).map((num) => (
-                <SelectItem key={num} value={num.toString()}>
+                <SelectItem key={num} value={String(num)}>
                   {num} sessão{num !== 1 ? 'ões' : ''} por semana
                 </SelectItem>
               ))}
@@ -207,21 +206,23 @@ export function TreinoForm({ treino, onSubmit, onCancel, isSubmitting }: TreinoF
             <div className="space-y-2">
               <Label htmlFor="periodizacao_id">Periodização</Label>
               <Select
-                value={watchedValues.periodizacao_id}
+                value={watchedValues.periodizacao_id ?? undefined}
                 onValueChange={(value) => setValue('periodizacao_id', value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione uma periodização" />
                 </SelectTrigger>
                 <SelectContent>
-                  {periodizacoes.map((periodizacao) => (
-                    <SelectItem key={periodizacao.id} value={periodizacao.id}>
-                      {periodizacao.nome}
-                    </SelectItem>
-                  ))}
+                  {periodizacoes
+                    ?.filter(p => p?.id && p?.nome)
+                    .map((p) => (
+                      <SelectItem key={String(p.id)} value={String(p.id)}>
+                        {p.nome}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
-              {usarPeriodizacao && errors.periodizacao_id && (
+              {errors.periodizacao_id && (
                 <p className="text-sm text-destructive">{errors.periodizacao_id.message}</p>
               )}
             </div>
@@ -240,9 +241,9 @@ export function TreinoForm({ treino, onSubmit, onCancel, isSubmitting }: TreinoF
                   <p><strong>Nome:</strong> {selectedPeriodizacao.nome}</p>
                   <p><strong>Semanas:</strong> {selectedPeriodizacao.semanas.length}</p>
                   <div className="flex flex-wrap gap-1 mt-2">
-                    {selectedPeriodizacao.semanas.map((semana, index) => (
-                      <Badge key={semana.id} variant="outline" className="text-xs">
-                        S{index + 1}: {semana.tipos_microciclos.nome}
+                    {selectedPeriodizacao.semanas.map((semana: any, index: number) => (
+                      <Badge key={String(semana.id ?? index)} variant="outline" className="text-xs">
+                        S{index + 1}: {semana.tipos_microciclos?.nome ?? '—'}
                       </Badge>
                     ))}
                   </div>
@@ -263,7 +264,7 @@ export function TreinoForm({ treino, onSubmit, onCancel, isSubmitting }: TreinoF
         <p className="text-muted-foreground">Configure as sessões do treino</p>
       </div>
 
-      <SessoesBuilder 
+      <SessoesBuilder
         sessoes={sessoes}
         setSessoes={setSessoes}
         sessoesSemanais={watchedValues.sessoes_semanais || 3}
@@ -276,7 +277,6 @@ export function TreinoForm({ treino, onSubmit, onCancel, isSubmitting }: TreinoF
       <div className="text-center">
         <Dumbbell className="h-12 w-12 mx-auto text-primary mb-4" />
         <h3 className="text-lg font-semibold">Exercícios por Sessão</h3>
-        <p className="text-muted-foreground">Configure os exercícios de cada sessão</p>
       </div>
 
       <div className="text-center py-8 text-muted-foreground">
@@ -286,7 +286,7 @@ export function TreinoForm({ treino, onSubmit, onCancel, isSubmitting }: TreinoF
     </div>
   );
 
-  const canProceedToStep2 = watchedValues.nome && watchedValues.aluno_id && watchedValues.sessoes_semanais;
+  const canProceedToStep2 = Boolean(watchedValues.nome && watchedValues.aluno_id && watchedValues.sessoes_semanais);
   const canProceedToStep3 = sessoes.length > 0;
 
   return (
