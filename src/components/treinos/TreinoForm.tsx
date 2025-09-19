@@ -1,0 +1,361 @@
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ChevronLeft, ChevronRight, Users, Calendar, Dumbbell, Target, Plus, GripVertical } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useAlunos } from '@/hooks/useAlunos';
+import { usePeriodizacoes } from '@/hooks/usePeriodizacoes';
+import { SessoesBuilder } from './SessoesBuilder';
+import type { TreinoCompleto } from '@/hooks/useTreinos';
+
+const treinoSchema = z.object({
+  nome: z.string().min(1, 'Nome é obrigatório'),
+  aluno_id: z.string().min(1, 'Aluno é obrigatório'),
+  sessoes_semanais: z.number().min(1, 'Mínimo 1 sessão por semana').max(7, 'Máximo 7 sessões por semana'),
+  usar_periodizacao: z.boolean(),
+  periodizacao_id: z.string().optional(),
+});
+
+type TreinoFormData = z.infer<typeof treinoSchema>;
+
+interface TreinoFormProps {
+  treino?: TreinoCompleto;
+  onSubmit: (data: any) => void;
+  onCancel: () => void;
+  isSubmitting?: boolean;
+}
+
+interface Sessao {
+  id?: string;
+  nome: string;
+  ordem: number;
+}
+
+export function TreinoForm({ treino, onSubmit, onCancel, isSubmitting }: TreinoFormProps) {
+  const [currentStep, setCurrentStep] = useState(1);
+  const [sessoes, setSessoes] = useState<Sessao[]>([]);
+  const [usarPeriodizacao, setUsarPeriodizacao] = useState(false);
+
+  const { alunos } = useAlunos();
+  const { periodizacoes } = usePeriodizacoes();
+
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { errors },
+    reset
+  } = useForm<TreinoFormData>({
+    resolver: zodResolver(treinoSchema),
+    defaultValues: {
+      nome: '',
+      aluno_id: '',
+      sessoes_semanais: 3,
+      usar_periodizacao: false,
+      periodizacao_id: '',
+    }
+  });
+
+  const watchedValues = watch();
+  const selectedPeriodizacao = periodizacoes.find(p => p.id === watchedValues.periodizacao_id);
+
+  // Initialize form when editing
+  useEffect(() => {
+    if (treino) {
+      reset({
+        nome: treino.nome,
+        aluno_id: treino.aluno_id,
+        sessoes_semanais: treino.sessoes_semanais || 3,
+        usar_periodizacao: !!treino.periodizacao_id,
+        periodizacao_id: treino.periodizacao_id || '',
+      });
+      setUsarPeriodizacao(!!treino.periodizacao_id);
+      setSessoes(treino.sessoes.map((sessao, index) => ({
+        id: sessao.id,
+        nome: sessao.nome,
+        ordem: index + 1
+      })));
+    }
+  }, [treino, reset]);
+
+  // Generate default sessions when sessoes_semanais changes
+  useEffect(() => {
+    if (!treino && watchedValues.sessoes_semanais && sessoes.length === 0) {
+      const defaultSessions = Array.from({ length: watchedValues.sessoes_semanais }, (_, i) => ({
+        nome: String.fromCharCode(65 + i), // A, B, C, etc.
+        ordem: i + 1
+      }));
+      setSessoes(defaultSessions);
+    }
+  }, [watchedValues.sessoes_semanais, treino, sessoes.length]);
+
+  const handleNext = () => {
+    if (currentStep < 3) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const handleFormSubmit = (data: TreinoFormData) => {
+    const formData = {
+      ...data,
+      periodizacao_id: data.usar_periodizacao ? data.periodizacao_id : null,
+      sessoes: sessoes
+    };
+    onSubmit(formData);
+  };
+
+  const handleUsarPeriodizacaoChange = (checked: boolean) => {
+    setUsarPeriodizacao(checked);
+    setValue('usar_periodizacao', checked);
+    if (!checked) {
+      setValue('periodizacao_id', '');
+    }
+  };
+
+  const renderStep1 = () => (
+    <div className="space-y-6">
+      <div className="text-center">
+        <Users className="h-12 w-12 mx-auto text-primary mb-4" />
+        <h3 className="text-lg font-semibold">Dados do Treino</h3>
+        <p className="text-muted-foreground">Defina as informações básicas</p>
+      </div>
+
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="aluno_id">Aluno *</Label>
+          <Select
+            value={watchedValues.aluno_id}
+            onValueChange={(value) => setValue('aluno_id', value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione um aluno" />
+            </SelectTrigger>
+            <SelectContent>
+              {alunos.map((aluno) => (
+                <SelectItem key={aluno.id} value={aluno.id}>
+                  {aluno.nome}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {errors.aluno_id && (
+            <p className="text-sm text-destructive">{errors.aluno_id.message}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="nome">Nome do Treino *</Label>
+          <Input
+            id="nome"
+            placeholder="Ex: Treino de Força, Hipertrofia A/B..."
+            {...register('nome')}
+          />
+          {errors.nome && (
+            <p className="text-sm text-destructive">{errors.nome.message}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="sessoes_semanais">Sessões por Semana *</Label>
+          <Select
+            value={watchedValues.sessoes_semanais?.toString()}
+            onValueChange={(value) => setValue('sessoes_semanais', parseInt(value))}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {Array.from({ length: 7 }, (_, i) => i + 1).map((num) => (
+                <SelectItem key={num} value={num.toString()}>
+                  {num} sessão{num !== 1 ? 'ões' : ''} por semana
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {errors.sessoes_semanais && (
+            <p className="text-sm text-destructive">{errors.sessoes_semanais.message}</p>
+          )}
+        </div>
+
+        <div className="space-y-4">
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="usar_periodizacao"
+              checked={usarPeriodizacao}
+              onCheckedChange={handleUsarPeriodizacaoChange}
+            />
+            <Label htmlFor="usar_periodizacao">Usar Periodização</Label>
+          </div>
+
+          {usarPeriodizacao && (
+            <div className="space-y-2">
+              <Label htmlFor="periodizacao_id">Periodização</Label>
+              <Select
+                value={watchedValues.periodizacao_id}
+                onValueChange={(value) => setValue('periodizacao_id', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma periodização" />
+                </SelectTrigger>
+                <SelectContent>
+                  {periodizacoes.map((periodizacao) => (
+                    <SelectItem key={periodizacao.id} value={periodizacao.id}>
+                      {periodizacao.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {usarPeriodizacao && errors.periodizacao_id && (
+                <p className="text-sm text-destructive">{errors.periodizacao_id.message}</p>
+              )}
+            </div>
+          )}
+
+          {selectedPeriodizacao && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Target className="h-4 w-4" />
+                  Resumo da Periodização
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-sm text-muted-foreground">
+                  <p><strong>Nome:</strong> {selectedPeriodizacao.nome}</p>
+                  <p><strong>Semanas:</strong> {selectedPeriodizacao.semanas.length}</p>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {selectedPeriodizacao.semanas.map((semana, index) => (
+                      <Badge key={semana.id} variant="outline" className="text-xs">
+                        S{index + 1}: {semana.tipos_microciclos.nome}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderStep2 = () => (
+    <div className="space-y-6">
+      <div className="text-center">
+        <Calendar className="h-12 w-12 mx-auto text-primary mb-4" />
+        <h3 className="text-lg font-semibold">Agenda / Sessões</h3>
+        <p className="text-muted-foreground">Configure as sessões do treino</p>
+      </div>
+
+      <SessoesBuilder 
+        sessoes={sessoes}
+        setSessoes={setSessoes}
+        sessoesSemanais={watchedValues.sessoes_semanais || 3}
+      />
+    </div>
+  );
+
+  const renderStep3 = () => (
+    <div className="space-y-6">
+      <div className="text-center">
+        <Dumbbell className="h-12 w-12 mx-auto text-primary mb-4" />
+        <h3 className="text-lg font-semibold">Exercícios por Sessão</h3>
+        <p className="text-muted-foreground">Configure os exercícios de cada sessão</p>
+      </div>
+
+      <div className="text-center py-8 text-muted-foreground">
+        <p>Esta funcionalidade será implementada na próxima iteração.</p>
+        <p className="text-sm mt-2">Por enquanto, você pode criar o treino e adicionar os exercícios depois.</p>
+      </div>
+    </div>
+  );
+
+  const canProceedToStep2 = watchedValues.nome && watchedValues.aluno_id && watchedValues.sessoes_semanais;
+  const canProceedToStep3 = sessoes.length > 0;
+
+  return (
+    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
+      {/* Progress */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          {[1, 2, 3].map((step) => (
+            <div key={step} className="flex items-center">
+              <div className={`
+                w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium
+                ${currentStep >= step ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}
+              `}>
+                {step}
+              </div>
+              {step < 3 && (
+                <div className={`w-12 h-0.5 ${currentStep > step ? 'bg-primary' : 'bg-muted'}`} />
+              )}
+            </div>
+          ))}
+        </div>
+        <div className="text-sm text-muted-foreground">
+          Passo {currentStep} de 3
+        </div>
+      </div>
+
+      {/* Step Content */}
+      <div className="min-h-[400px]">
+        {currentStep === 1 && renderStep1()}
+        {currentStep === 2 && renderStep2()}
+        {currentStep === 3 && renderStep3()}
+      </div>
+
+      {/* Actions */}
+      <Separator />
+      <div className="flex items-center justify-between">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={currentStep === 1 ? onCancel : handlePrevious}
+        >
+          {currentStep === 1 ? 'Cancelar' : (
+            <>
+              <ChevronLeft className="h-4 w-4 mr-2" />
+              Anterior
+            </>
+          )}
+        </Button>
+
+        <div className="flex gap-2">
+          {currentStep < 3 ? (
+            <Button
+              type="button"
+              onClick={handleNext}
+              disabled={
+                (currentStep === 1 && !canProceedToStep2) ||
+                (currentStep === 2 && !canProceedToStep3)
+              }
+            >
+              Próximo
+              <ChevronRight className="h-4 w-4 ml-2" />
+            </Button>
+          ) : (
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Salvando...' : (treino ? 'Atualizar' : 'Criar Treino')}
+            </Button>
+          )}
+        </div>
+      </div>
+    </form>
+  );
+}

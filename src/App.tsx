@@ -14,6 +14,7 @@ import NotFound from "./pages/NotFound";
 import Exercicios from "./pages/Exercicios";
 import Periodizacoes from "./pages/Periodizacoes";
 import TiposMicrociclos from "./pages/TiposMicrociclos";
+import Treinos from "./pages/Treinos";
 
 const queryClient = new QueryClient();
 
@@ -75,17 +76,7 @@ function AppRoutes() {
         }
       />
 
-      <Route
-        path="/treinos"
-        element={
-          <ProtectedRoute>
-            <div className="p-8 text-center">
-              <h1 className="text-2xl font-bold mb-4">Página de Treinos</h1>
-              <p className="text-muted-foreground">Em desenvolvimento</p>
-            </div>
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/treinos" element={<ProtectedRoute><Treinos /></ProtectedRoute>} />
 
       <Route
         path="/periodizacoes"
