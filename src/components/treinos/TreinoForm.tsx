@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ChevronLeft, ChevronRight, Users, Calendar, Dumbbell, Target } from 'lucide-react';
+import { SessaoExerciciosBuilder } from './SessaoExerciciosBuilder';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -272,19 +273,52 @@ export function TreinoForm({ treino, onSubmit, onCancel, isSubmitting }: TreinoF
     </div>
   );
 
-  const renderStep3 = () => (
-    <div className="space-y-6">
-      <div className="text-center">
-        <Dumbbell className="h-12 w-12 mx-auto text-primary mb-4" />
-        <h3 className="text-lg font-semibold">Exercícios por Sessão</h3>
-      </div>
+  const renderStep3 = () => {
+    if (!treino?.id) {
+      return (
+        <div className="space-y-6">
+          <div className="text-center">
+            <Dumbbell className="h-12 w-12 mx-auto text-primary mb-4" />
+            <h3 className="text-lg font-semibold">Exercícios por Sessão</h3>
+            <p className="text-muted-foreground">Configure os exercícios para cada sessão</p>
+          </div>
 
-      <div className="text-center py-8 text-muted-foreground">
-        <p>Esta funcionalidade será implementada na próxima iteração.</p>
-        <p className="text-sm mt-2">Por enquanto, você pode criar o treino e adicionar os exercícios depois.</p>
+          <div className="text-center py-8 text-muted-foreground">
+            <p>Salve o treino primeiro para adicionar exercícios.</p>
+            <p className="text-sm mt-2">Após criar o treino, você poderá editá-lo para adicionar exercícios.</p>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-6">
+        <div className="text-center">
+          <Dumbbell className="h-12 w-12 mx-auto text-primary mb-4" />
+          <h3 className="text-lg font-semibold">Exercícios por Sessão</h3>
+          <p className="text-muted-foreground">Configure os exercícios para cada sessão</p>
+        </div>
+
+        <div className="space-y-4">
+          {sessoes.map((sessao) => (
+            <SessaoExerciciosBuilder
+              key={sessao.id || sessao.ordem}
+              sessaoId={sessao.id || ''}
+              sessaoNome={sessao.nome}
+              usarPeriodizacao={watchedValues.usar_periodizacao || false}
+            />
+          ))}
+        </div>
+
+        {sessoes.length === 0 && (
+          <div className="text-center py-8 text-muted-foreground">
+            <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p>Configure as sessões no passo anterior</p>
+          </div>
+        )}
       </div>
-    </div>
-  );
+    );
+  };
 
   const canProceedToStep2 = Boolean(watchedValues.nome && watchedValues.aluno_id && watchedValues.sessoes_semanais);
   const canProceedToStep3 = sessoes.length > 0;
