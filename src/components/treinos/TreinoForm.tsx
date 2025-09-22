@@ -76,24 +76,27 @@ export function TreinoForm({ treino, onSubmit, onCancel, isSubmitting }: TreinoF
 
   // Initialize form when editing
   useEffect(() => {
-    if (treino) {
-      reset({
-        nome: treino.nome,
-        aluno_id: String(treino.aluno_id),
-        sessoes_semanais: treino.sessoes_semanais ?? 3,
-        usar_periodizacao: !!treino.periodizacao_id,
-        periodizacao_id: treino.periodizacao_id ? String(treino.periodizacao_id) : undefined,
-      });
-      setUsarPeriodizacao(!!treino.periodizacao_id);
-      setSessoes(
-        (treino.sessoes ?? []).map((sessao, index) => ({
-          id: sessao.id ? String(sessao.id) : undefined,
-          nome: sessao.nome,
-          ordem: index + 1
-        }))
-      );
-    }
-  }, [treino, reset]);
+  const alunosProntos = (alunos?.length ?? 0) > 0;
+  const perProntas   = (periodizacoes?.length ?? 0) > 0;
+
+  if (treino && alunosProntos && perProntas) {
+    reset({
+      nome: treino.nome,
+      aluno_id: String(treino.aluno_id),
+      sessoes_semanais: treino.sessoes_semanais ?? 3,
+      usar_periodizacao: !!treino.periodizacao_id,
+      periodizacao_id: treino.periodizacao_id ? String(treino.periodizacao_id) : undefined,
+    });
+    setUsarPeriodizacao(!!treino.periodizacao_id);
+    setSessoes((treino.sessoes ?? []).map((s, i) => ({
+      id: s.id ? String(s.id) : undefined,
+      nome: s.nome,
+      ordem: i + 1,
+      // opcional: exercicios: s.exercicios ?? []
+    })));
+  }
+}, [treino, alunos?.length, periodizacoes?.length, reset]);
+
 
   // Generate default sessions when sessoes_semanais changes (create mode)
   useEffect(() => {
@@ -106,7 +109,11 @@ export function TreinoForm({ treino, onSubmit, onCancel, isSubmitting }: TreinoF
     }
   }, [watchedValues.sessoes_semanais, treino, sessoes.length]);
 
-  const handleNext = () => setCurrentStep((s) => Math.min(3, s + 1));
+const handleNext: React.MouseEventHandler<HTMLButtonElement> = (e) => {
+  e.preventDefault();
+  e.stopPropagation();
+  setCurrentStep((s) => Math.min(3, s + 1));
+};
   const handlePrevious = () => setCurrentStep((s) => Math.max(1, s - 1));
 
   const handleFormSubmit = (data: TreinoFormData) => {
@@ -137,10 +144,11 @@ export function TreinoForm({ treino, onSubmit, onCancel, isSubmitting }: TreinoF
       <div className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="aluno_id">Aluno *</Label>
-          <Select
-            value={watchedValues.aluno_id ?? undefined}
-            onValueChange={(value) => setValue('aluno_id', value)}
-          >
+         <Select
+  value={watch('aluno_id') ?? undefined}
+  onValueChange={(v) => setValue('aluno_id', v, { shouldDirty:true })}
+>
+
             <SelectTrigger>
               <SelectValue placeholder="Selecione um aluno" />
             </SelectTrigger>
@@ -375,14 +383,13 @@ export function TreinoForm({ treino, onSubmit, onCancel, isSubmitting }: TreinoF
             <Button
               type="button"
               onClick={handleNext}
-              disabled={
-                (currentStep === 1 && !canProceedToStep2) ||
-                (currentStep === 2 && !canProceedToStep3)
-              }
+              formNoValidate
+              data-no-close // (se usar Radix/Dialog, útil para checar wrappers)
             >
               Próximo
               <ChevronRight className="h-4 w-4 ml-2" />
             </Button>
+
           ) : (
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? 'Salvando...' : (treino ? 'Atualizar' : 'Criar Treino')}
