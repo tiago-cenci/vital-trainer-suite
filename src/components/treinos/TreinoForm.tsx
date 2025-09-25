@@ -65,7 +65,7 @@ export function TreinoForm({ treino, onSubmit, onCancel, isSubmitting }: TreinoF
     defaultValues: {
       nome: '',
       aluno_id: undefined,           // <- nunca ""
-      sessoes_semanais: 3,
+      sessoes_semanais: 5,
       usar_periodizacao: false,
       periodizacao_id: undefined,    // <- nunca ""
     }
@@ -184,7 +184,7 @@ const handleNext: React.MouseEventHandler<HTMLButtonElement> = (e) => {
         <div className="space-y-2">
           <Label htmlFor="sessoes_semanais">Sessões por Semana *</Label>
           <Select
-            value={watchedValues.sessoes_semanais?.toString() ?? undefined}
+            value={(watchedValues.sessoes_semanais ?? 5).toString()}
             onValueChange={(value) => setValue('sessoes_semanais', parseInt(value, 10))}
           >
             <SelectTrigger>
@@ -193,11 +193,12 @@ const handleNext: React.MouseEventHandler<HTMLButtonElement> = (e) => {
             <SelectContent>
               {Array.from({ length: 7 }, (_, i) => i + 1).map((num) => (
                 <SelectItem key={num} value={String(num)}>
-                  {num} sessão{num !== 1 ? 'ões' : ''} por semana
+                  {num} {num === 1 ? 'sessão' : 'sessões'} por semana
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
+
           {errors.sessoes_semanais && (
             <p className="text-sm text-destructive">{errors.sessoes_semanais.message}</p>
           )}
