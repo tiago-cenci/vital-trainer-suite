@@ -15,6 +15,7 @@ import Exercicios from "./pages/Exercicios";
 import Periodizacoes from "./pages/Periodizacoes";
 import TiposMicrociclos from "./pages/TiposMicrociclos";
 import Treinos from "./pages/Treinos";
+import Correcoes from "./pages/Correcoes";
 
 const queryClient = new QueryClient();
 
@@ -77,6 +78,9 @@ function AppRoutes() {
       />
 
       <Route path="/treinos" element={<ProtectedRoute><Treinos /></ProtectedRoute>} />
+
+      <Route path="/correcoes" element={<ProtectedRoute><Correcoes /></ProtectedRoute>} />
+
 
       <Route
         path="/periodizacoes"

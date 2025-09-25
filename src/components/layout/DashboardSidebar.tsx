@@ -8,7 +8,8 @@ import {
   Settings,
   BarChart3,
   Target,
-  LogOut
+  LogOut,
+  SearchCheck
 } from 'lucide-react';
 import {
   Sidebar,
@@ -30,7 +31,8 @@ const menuItems = [
   { title: 'Dashboard', url: '/dashboard', icon: BarChart3 },
   { title: 'Alunos', url: '/alunos', icon: Users },
   { title: 'Exercícios', url: '/exercicios', icon: Dumbbell },
-  { title: 'Treinos', url: '/treinos', icon: ClipboardList }
+  { title: 'Treinos', url: '/treinos', icon: ClipboardList }, 
+  { title: 'Correções', url: '/correcoes', icon: SearchCheck }
 ];
 
 const configItems = [
