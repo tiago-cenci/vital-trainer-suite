@@ -16,6 +16,8 @@ import { useAlunos } from '@/hooks/useAlunos';
 import { usePeriodizacoes } from '@/hooks/usePeriodizacoes';
 import { SessoesBuilder } from './SessoesBuilder';
 import type { TreinoCompleto } from '@/hooks/useTreinos';
+import { SessaoAlongamentosManager } from '@/components/alongamentos/SessaoAlongamentosManager';
+
 
 const treinoSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório'),
@@ -306,7 +308,7 @@ const handleNext: React.MouseEventHandler<HTMLButtonElement> = (e) => {
           <h3 className="text-lg font-semibold">Exercícios por Sessão</h3>
           <p className="text-muted-foreground">Configure os exercícios para cada sessão</p>
         </div>
-
+        
         <div className="space-y-4">
           {sessoes.map((sessao) => (
             <SessaoExerciciosBuilder

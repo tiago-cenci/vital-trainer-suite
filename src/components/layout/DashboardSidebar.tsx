@@ -9,7 +9,8 @@ import {
   BarChart3,
   Target,
   LogOut,
-  SearchCheck
+  SearchCheck,
+  BicepsFlexed
 } from 'lucide-react';
 import {
   Sidebar,
@@ -31,6 +32,7 @@ const menuItems = [
   { title: 'Dashboard', url: '/dashboard', icon: BarChart3 },
   { title: 'Alunos', url: '/alunos', icon: Users },
   { title: 'Exercícios', url: '/exercicios', icon: Dumbbell },
+  { title: 'Alongamentos/Mobilidades', url: '/alongamentos', icon: BicepsFlexed },
   { title: 'Treinos', url: '/treinos', icon: ClipboardList }, 
   { title: 'Correções', url: '/correcoes', icon: SearchCheck }
 ];

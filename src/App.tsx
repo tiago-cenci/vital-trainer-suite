@@ -16,6 +16,7 @@ import Periodizacoes from "./pages/Periodizacoes";
 import TiposMicrociclos from "./pages/TiposMicrociclos";
 import Treinos from "./pages/Treinos";
 import Correcoes from "./pages/Correcoes";
+import Alongamentos from "./pages/Alongamentos";
 
 const queryClient = new QueryClient();
 
@@ -81,6 +82,7 @@ function AppRoutes() {
 
       <Route path="/correcoes" element={<ProtectedRoute><Correcoes /></ProtectedRoute>} />
 
+      <Route path="/alongamentos" element={<ProtectedRoute><Alongamentos/></ProtectedRoute>} />
 
       <Route
         path="/periodizacoes"

@@ -634,6 +634,126 @@ export type Database = {
           }
         ]
       }
+      // +++ NOVAS TABELAS +++
+      alongamento_tags: {
+        Row: {
+          id: string
+          user_id: string
+          nome: string
+          descricao: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          nome: string
+          descricao?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          nome?: string
+          descricao?: string | null
+          created_at?: string
+        }
+        Relationships: [] // (FK para auth.users não é mapeada aqui)
+      }
+
+      alongamentos: {
+        Row: {
+          id: string
+          user_id: string
+          descricao: string
+          grupo_muscular: Database['public']['Enums']['grupo_muscular']
+          forma_execucao: string | null
+          musculos_envolvidos: string | null
+          observacoes: string | null
+          link_video: string | null
+          tag_id: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          descricao: string
+          grupo_muscular: Database['public']['Enums']['grupo_muscular']
+          forma_execucao?: string | null
+          musculos_envolvidos?: string | null
+          observacoes?: string | null
+          link_video?: string | null
+          tag_id: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          descricao?: string
+          grupo_muscular?: Database['public']['Enums']['grupo_muscular']
+          forma_execucao?: string | null
+          musculos_envolvidos?: string | null
+          observacoes?: string | null
+          link_video?: string | null
+          tag_id?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'alongamentos_tag_id_fkey'
+            columns: ['tag_id']
+            isOneToOne: false
+            referencedRelation: 'alongamento_tags'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+
+      sessoes_alongamentos: {
+        Row: {
+          id: string
+          sessao_id: string
+          alongamento_id: string
+          ordem: number
+          observacoes: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          sessao_id: string
+          alongamento_id: string
+          ordem?: number
+          observacoes?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          sessao_id?: string
+          alongamento_id?: string
+          ordem?: number
+          observacoes?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'sessoes_alongamentos_sessao_id_fkey'
+            columns: ['sessao_id']
+            isOneToOne: false
+            referencedRelation: 'sessoes'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'sessoes_alongamentos_alongamento_id_fkey'
+            columns: ['alongamento_id']
+            isOneToOne: false
+            referencedRelation: 'alongamentos'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+
       treinos_execucoes: {
         Row: {
           id: string
@@ -697,9 +817,31 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      // Se criar a RPC listar_execucoes_para_correcao, adicione aqui a tipagem quando precisar
-      [_ in never]: never
+    listar_alongamentos_sessao: {
+      Args: { p_sessao_id: string }
+      Returns: {
+        sessao_along_id: string
+        sessao_id: string
+        ordem: number
+        observacoes: string | null
+        alongamento_id: string
+        descricao: string
+        grupo_muscular: Database['public']['Enums']['grupo_muscular']
+        forma_execucao: string | null
+        musculos_envolvidos: string | null
+        along_observacoes: string | null
+        link_video: string | null
+        tag_id: string
+        tag_nome: string
+      }[]
     }
+    ,
+    adicionar_alongamentos_por_tag: {
+      Args: { p_sessao_id: string; p_tag_id: string }
+      Returns: number
+    }
+  }
+
     Enums: {
       grupo_muscular:
         | "Peito"
