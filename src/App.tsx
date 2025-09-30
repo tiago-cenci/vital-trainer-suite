@@ -17,6 +17,7 @@ import TiposMicrociclos from "./pages/TiposMicrociclos";
 import Treinos from "./pages/Treinos";
 import Correcoes from "./pages/Correcoes";
 import Alongamentos from "./pages/Alongamentos";
+import AuthCallback from "./pages/AuthCallback";
 
 const queryClient = new QueryClient();
 
@@ -79,6 +80,7 @@ function AppRoutes() {
       />
 
       <Route path="/treinos" element={<ProtectedRoute><Treinos /></ProtectedRoute>} />
+      <Route path="/auth/callback" element={<ProtectedRoute><AuthCallback /></ProtectedRoute>} />
 
       <Route path="/correcoes" element={<ProtectedRoute><Correcoes /></ProtectedRoute>} />
 
