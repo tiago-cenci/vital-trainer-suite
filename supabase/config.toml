@@ -1,1 +1,7 @@
 project_id = "kjqoesfrehzcrtvrcktm"
+
+[functions.gdrive_oauth_callback]
+verify_jwt = false
+
+[functions.gdrive_proxy]
+verify_jwt = true

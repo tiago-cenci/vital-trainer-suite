@@ -349,17 +349,17 @@ export function useTreinos(filters: TreinoFilters = {}) {
           for (const sessaoExercicio of sessao.sessoes_exercicios) {
             const { data: novoSessaoExercicio, error: sessaoExercicioError } = await supabase
               .from('sessoes_exercicios')
-              .insert({
+              .insert([{
                 sessao_id: novaSessao.id,
                 exercicio_id: sessaoExercicio.exercicio_id,
                 ordem: sessaoExercicio.ordem,
                 prescricao_tipo: 'DETALHADA',
-                series_qtd: 1,
-                reps_min: 8,
-                reps_max: 12,
-                descanso_seg: 60,
-                usar_periodizacao: false
-              })
+                series_qtd: sessaoExercicio.series_qtd || 3,
+                reps_min: sessaoExercicio.reps_min || 8,
+                reps_max: sessaoExercicio.reps_max || 12,
+                descanso_seg: sessaoExercicio.descanso_seg || 90,
+                usar_periodizacao: sessaoExercicio.usar_periodizacao || false
+              }])
               .select()
               .single();
 

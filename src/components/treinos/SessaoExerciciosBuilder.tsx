@@ -96,7 +96,7 @@ export function SessaoExerciciosBuilder({
       updateExercicio({
         id: editingExercicio.id,
         ordem: editingExercicio.ordem,
-        prescricao_tipo: editingExercicio.prescricao_tipo,
+        prescricao_tipo: usarPeriodizacao ? 'PERIODIZACAO' : 'DETALHADA',
         series_qtd: data.series_qtd ?? editingExercicio.series_qtd,
         reps_min: data.reps_min ?? editingExercicio.reps_min,
         reps_max: data.reps_max ?? editingExercicio.reps_max,

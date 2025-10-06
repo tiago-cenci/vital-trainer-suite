@@ -65,7 +65,7 @@ export function useSessoesExercicios(sessaoId: string) {
 
       const { data: sessaoExercicio, error } = await supabase
         .from('sessoes_exercicios')
-        .insert({
+        .insert([{
           sessao_id: sessaoId,
           exercicio_id: data.exercicio_id,
           ordem: data.ordem,
@@ -75,7 +75,7 @@ export function useSessoesExercicios(sessaoId: string) {
           reps_max: data.reps_max,
           descanso_seg: data.descanso_seg,
           usar_periodizacao: data.usar_periodizacao || false
-        })
+        }])
         .select()
         .single();
 
@@ -112,17 +112,20 @@ export function useSessoesExercicios(sessaoId: string) {
     }) => {
       if (!user) throw new Error('Usuário não autenticado');
 
+      const updateData: any = {
+        ordem: data.ordem
+      };
+      
+      if (data.prescricao_tipo) updateData.prescricao_tipo = data.prescricao_tipo;
+      if (data.series_qtd !== undefined) updateData.series_qtd = data.series_qtd;
+      if (data.reps_min !== undefined) updateData.reps_min = data.reps_min;
+      if (data.reps_max !== undefined) updateData.reps_max = data.reps_max;
+      if (data.descanso_seg !== undefined) updateData.descanso_seg = data.descanso_seg;
+      if (data.usar_periodizacao !== undefined) updateData.usar_periodizacao = data.usar_periodizacao;
+
       const { error } = await supabase
         .from('sessoes_exercicios')
-        .update({
-          ordem: data.ordem,
-          prescricao_tipo: data.prescricao_tipo,
-          series_qtd: data.series_qtd,
-          reps_min: data.reps_min,
-          reps_max: data.reps_max,
-          descanso_seg: data.descanso_seg,
-          usar_periodizacao: data.usar_periodizacao
-        })
+        .update(updateData)
         .eq('id', data.id);
 
       if (error) throw error;

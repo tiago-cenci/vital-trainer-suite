@@ -38,15 +38,15 @@ export default function Dashboard() {
   const handleConnectDrive = () => {
     if (!user) return;
     const p = new URLSearchParams({
-      client_id: import.meta.env.VITE_GDRIVE_CLIENT_ID,
-      redirect_uri: import.meta.env.VITE_GDRIVE_REDIRECT_URI,
+      client_id: import.meta.env.VITE_GDRIVE_CLIENT_ID || '',
+      redirect_uri: 'https://vital-trainer-suite.lovable.app/auth/callback',
       response_type: "code",
       scope: "https://www.googleapis.com/auth/drive.file openid email profile",
       access_type: "offline",
       prompt: "consent",
       state: JSON.stringify({ user_id: user.id }),
     });
-    (window.top ?? window).location.href = `https://accounts.google.com/o/oauth2/v2/auth?${p}`;
+    window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${p}`;
   };
 
 

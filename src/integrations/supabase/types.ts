@@ -7,14 +7,91 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "13.0.5"
   }
   public: {
     Tables: {
+      alongamento_tags: {
+        Row: {
+          created_at: string
+          descricao: string | null
+          id: string
+          nome: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      alongamentos: {
+        Row: {
+          created_at: string
+          descricao: string
+          forma_execucao: string | null
+          grupo_muscular: Database["public"]["Enums"]["grupo_muscular"]
+          id: string
+          link_video: string | null
+          musculos_envolvidos: string | null
+          observacoes: string | null
+          tag_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          descricao: string
+          forma_execucao?: string | null
+          grupo_muscular: Database["public"]["Enums"]["grupo_muscular"]
+          id?: string
+          link_video?: string | null
+          musculos_envolvidos?: string | null
+          observacoes?: string | null
+          tag_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          descricao?: string
+          forma_execucao?: string | null
+          grupo_muscular?: Database["public"]["Enums"]["grupo_muscular"]
+          id?: string
+          link_video?: string | null
+          musculos_envolvidos?: string | null
+          observacoes?: string | null
+          tag_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alongamentos_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "alongamento_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       alunos: {
         Row: {
           altura: number | null
+          aluno_user_id: string | null
           created_at: string | null
           data_nascimento: string | null
           email: string | null
@@ -24,10 +101,10 @@ export type Database = {
           observacoes: string | null
           peso: number | null
           user_id: string | null
-          aluno_user_id?: string | null // pode existir no teu schema
         }
         Insert: {
           altura?: number | null
+          aluno_user_id?: string | null
           created_at?: string | null
           data_nascimento?: string | null
           email?: string | null
@@ -37,10 +114,10 @@ export type Database = {
           observacoes?: string | null
           peso?: number | null
           user_id?: string | null
-          aluno_user_id?: string | null
         }
         Update: {
           altura?: number | null
+          aluno_user_id?: string | null
           created_at?: string | null
           data_nascimento?: string | null
           email?: string | null
@@ -50,7 +127,6 @@ export type Database = {
           observacoes?: string | null
           peso?: number | null
           user_id?: string | null
-          aluno_user_id?: string | null
         }
         Relationships: []
       }
@@ -89,7 +165,86 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "alunos"
             referencedColumns: ["id"]
-          }
+          },
+        ]
+      }
+      correcoes: {
+        Row: {
+          created_at: string
+          criterios_json: Json | null
+          id: string
+          personal_user_id: string
+          pontuacao_opcional: number | null
+          sessoes_exercicios_execucoes_id: string
+          status: Database["public"]["Enums"]["correcao_status"]
+          texto: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          criterios_json?: Json | null
+          id?: string
+          personal_user_id: string
+          pontuacao_opcional?: number | null
+          sessoes_exercicios_execucoes_id: string
+          status?: Database["public"]["Enums"]["correcao_status"]
+          texto: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          criterios_json?: Json | null
+          id?: string
+          personal_user_id?: string
+          pontuacao_opcional?: number | null
+          sessoes_exercicios_execucoes_id?: string
+          status?: Database["public"]["Enums"]["correcao_status"]
+          texto?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "correcoes_sessoes_exercicios_execucoes_id_fkey"
+            columns: ["sessoes_exercicios_execucoes_id"]
+            isOneToOne: false
+            referencedRelation: "sessoes_exercicios_execucoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      correcoes_midias: {
+        Row: {
+          correcao_id: string
+          created_at: string
+          duracao_seg: number | null
+          id: string
+          path: string
+          tipo: Database["public"]["Enums"]["midia_tipo"]
+        }
+        Insert: {
+          correcao_id: string
+          created_at?: string
+          duracao_seg?: number | null
+          id?: string
+          path: string
+          tipo: Database["public"]["Enums"]["midia_tipo"]
+        }
+        Update: {
+          correcao_id?: string
+          created_at?: string
+          duracao_seg?: number | null
+          id?: string
+          path?: string
+          tipo?: Database["public"]["Enums"]["midia_tipo"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "correcoes_midias_correcao_id_fkey"
+            columns: ["correcao_id"]
+            isOneToOne: false
+            referencedRelation: "correcoes"
+            referencedColumns: ["id"]
+          },
         ]
       }
       exercicios: {
@@ -119,6 +274,84 @@ export type Database = {
           link_video?: string | null
           nome?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      media_files: {
+        Row: {
+          aluno_id: string | null
+          created_at: string
+          deleted_at: string | null
+          duration_sec: number | null
+          expires_at: string | null
+          gdrive_file_id: string | null
+          id: string
+          kind: string
+          mime_type: string | null
+          owner_user_id: string
+          provider: string
+          ref_id: string
+          ref_table: string
+          size_bytes: number | null
+          supabase_path: string | null
+        }
+        Insert: {
+          aluno_id?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          duration_sec?: number | null
+          expires_at?: string | null
+          gdrive_file_id?: string | null
+          id?: string
+          kind: string
+          mime_type?: string | null
+          owner_user_id: string
+          provider: string
+          ref_id: string
+          ref_table: string
+          size_bytes?: number | null
+          supabase_path?: string | null
+        }
+        Update: {
+          aluno_id?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          duration_sec?: number | null
+          expires_at?: string | null
+          gdrive_file_id?: string | null
+          id?: string
+          kind?: string
+          mime_type?: string | null
+          owner_user_id?: string
+          provider?: string
+          ref_id?: string
+          ref_table?: string
+          size_bytes?: number | null
+          supabase_path?: string | null
+        }
+        Relationships: []
+      }
+      oauth_tokens: {
+        Row: {
+          access_token: string
+          expires_at: string
+          provider: string
+          refresh_token: string | null
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          expires_at: string
+          provider: string
+          refresh_token?: string | null
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          expires_at?: string
+          provider?: string
+          refresh_token?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -181,7 +414,7 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "periodizacoes_semanas"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
       periodizacoes_semanas: {
@@ -223,7 +456,7 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "tipos_microciclos"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
       series: {
@@ -252,45 +485,45 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "sessoes_exercicios"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
       series_execucoes: {
         Row: {
-          id: string
-          sessao_exercicio_execucao_id: string
-          indice: number
           carga: number | null
-          reps: number | null
-          descanso_seg: number | null
-          rpe: number | null
           completada: boolean
-          observacoes: string | null
           created_at: string
+          descanso_seg: number | null
+          id: string
+          indice: number
+          observacoes: string | null
+          reps: number | null
+          rpe: number | null
+          sessao_exercicio_execucao_id: string
         }
         Insert: {
-          id?: string
-          sessao_exercicio_execucao_id: string
-          indice: number
           carga?: number | null
-          reps?: number | null
-          descanso_seg?: number | null
-          rpe?: number | null
           completada?: boolean
-          observacoes?: string | null
           created_at?: string
+          descanso_seg?: number | null
+          id?: string
+          indice: number
+          observacoes?: string | null
+          reps?: number | null
+          rpe?: number | null
+          sessao_exercicio_execucao_id: string
         }
         Update: {
-          id?: string
-          sessao_exercicio_execucao_id?: string
-          indice?: number
           carga?: number | null
-          reps?: number | null
-          descanso_seg?: number | null
-          rpe?: number | null
           completada?: boolean
-          observacoes?: string | null
           created_at?: string
+          descanso_seg?: number | null
+          id?: string
+          indice?: number
+          observacoes?: string | null
+          reps?: number | null
+          rpe?: number | null
+          sessao_exercicio_execucao_id?: string
         }
         Relationships: [
           {
@@ -299,7 +532,7 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "sessoes_exercicios_execucoes"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
       sessoes: {
@@ -307,22 +540,22 @@ export type Database = {
           created_at: string | null
           id: string
           nome: string
-          treino_id: string | null
           ordem: number
+          treino_id: string | null
         }
         Insert: {
           created_at?: string | null
           id?: string
           nome: string
-          treino_id?: string | null
           ordem?: number
+          treino_id?: string | null
         }
         Update: {
           created_at?: string | null
           id?: string
           nome?: string
-          treino_id?: string | null
           ordem?: number
+          treino_id?: string | null
         }
         Relationships: [
           {
@@ -331,48 +564,90 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "treinos"
             referencedColumns: ["id"]
-          }
+          },
+        ]
+      }
+      sessoes_alongamentos: {
+        Row: {
+          alongamento_id: string
+          created_at: string
+          id: string
+          observacoes: string | null
+          ordem: number
+          sessao_id: string
+        }
+        Insert: {
+          alongamento_id: string
+          created_at?: string
+          id?: string
+          observacoes?: string | null
+          ordem?: number
+          sessao_id: string
+        }
+        Update: {
+          alongamento_id?: string
+          created_at?: string
+          id?: string
+          observacoes?: string | null
+          ordem?: number
+          sessao_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sessoes_alongamentos_alongamento_id_fkey"
+            columns: ["alongamento_id"]
+            isOneToOne: false
+            referencedRelation: "alongamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sessoes_alongamentos_sessao_id_fkey"
+            columns: ["sessao_id"]
+            isOneToOne: false
+            referencedRelation: "sessoes"
+            referencedColumns: ["id"]
+          },
         ]
       }
       sessoes_exercicios: {
         Row: {
           created_at: string | null
+          descanso_seg: number | null
           exercicio_id: string | null
           id: string
           ordem: number
+          prescricao_tipo: Database["public"]["Enums"]["prescricao_tipo_enum"]
+          reps_max: number | null
+          reps_min: number | null
+          series_qtd: number | null
           sessao_id: string | null
-          prescricao_tipo?: Database["public"]["Enums"]["tipo_serie"] | null
-          series_qtd?: number | null
-          reps_min?: number | null
-          reps_max?: number | null
-          descanso_seg?: number | null
-          usar_periodizacao?: boolean | null
+          usar_periodizacao: boolean
         }
         Insert: {
           created_at?: string | null
+          descanso_seg?: number | null
           exercicio_id?: string | null
           id?: string
           ordem: number
-          sessao_id?: string | null
-          prescricao_tipo?: Database["public"]["Enums"]["tipo_serie"] | null
-          series_qtd?: number | null
-          reps_min?: number | null
+          prescricao_tipo?: Database["public"]["Enums"]["prescricao_tipo_enum"]
           reps_max?: number | null
-          descanso_seg?: number | null
-          usar_periodizacao?: boolean | null
+          reps_min?: number | null
+          series_qtd?: number | null
+          sessao_id?: string | null
+          usar_periodizacao?: boolean
         }
         Update: {
           created_at?: string | null
+          descanso_seg?: number | null
           exercicio_id?: string | null
           id?: string
           ordem?: number
-          sessao_id?: string | null
-          prescricao_tipo?: Database["public"]["Enums"]["tipo_serie"] | null
-          series_qtd?: number | null
-          reps_min?: number | null
+          prescricao_tipo?: Database["public"]["Enums"]["prescricao_tipo_enum"]
           reps_max?: number | null
-          descanso_seg?: number | null
-          usar_periodizacao?: boolean | null
+          reps_min?: number | null
+          series_qtd?: number | null
+          sessao_id?: string | null
+          usar_periodizacao?: boolean
         }
         Relationships: [
           {
@@ -388,44 +663,51 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "sessoes"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
       sessoes_exercicios_execucoes: {
         Row: {
-          id: string
-          treino_execucao_id: string
-          sessoes_exercicios_id: string
-          ordem: number
-          started_at: string | null
-          ended_at: string | null
-          observacoes: string | null
           created_at: string
+          ended_at: string | null
+          id: string
+          observacoes: string | null
+          ordem: number
+          sessoes_exercicios_id: string
+          started_at: string | null
+          treino_execucao_id: string
           video_path: string | null
         }
         Insert: {
-          id?: string
-          treino_execucao_id: string
-          sessoes_exercicios_id: string
-          ordem: number
-          started_at?: string | null
-          ended_at?: string | null
-          observacoes?: string | null
           created_at?: string
+          ended_at?: string | null
+          id?: string
+          observacoes?: string | null
+          ordem: number
+          sessoes_exercicios_id: string
+          started_at?: string | null
+          treino_execucao_id: string
           video_path?: string | null
         }
         Update: {
-          id?: string
-          treino_execucao_id?: string
-          sessoes_exercicios_id?: string
-          ordem?: number
-          started_at?: string | null
-          ended_at?: string | null
-          observacoes?: string | null
           created_at?: string
+          ended_at?: string | null
+          id?: string
+          observacoes?: string | null
+          ordem?: number
+          sessoes_exercicios_id?: string
+          started_at?: string | null
+          treino_execucao_id?: string
           video_path?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "sessoes_exercicios_execucoes_sessoes_exercicios_id_fkey"
+            columns: ["sessoes_exercicios_id"]
+            isOneToOne: false
+            referencedRelation: "sessoes_exercicios"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "sessoes_exercicios_execucoes_treino_execucao_id_fkey"
             columns: ["treino_execucao_id"]
@@ -433,93 +715,34 @@ export type Database = {
             referencedRelation: "treinos_execucoes"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "sessoes_exercicios_execucoes_sessoes_exercicios_id_fkey"
-            columns: ["sessoes_exercicios_id"]
-            isOneToOne: false
-            referencedRelation: "sessoes_exercicios"
-            referencedColumns: ["id"]
-          }
         ]
       }
-      correcoes: {
+      storage_settings: {
         Row: {
-          id: string
-          sessoes_exercicios_execucoes_id: string
-          personal_user_id: string
-          texto: string
-          status: Database["public"]["Enums"]["correcao_status"]
-          pontuacao_opcional: number | null
-          criterios_json: Json | null
           created_at: string
+          gdrive_root_folder_id: string | null
+          provider: string
+          retention_days: number | null
           updated_at: string
+          user_id: string
         }
         Insert: {
-          id?: string
-          sessoes_exercicios_execucoes_id: string
-          personal_user_id: string
-          texto: string
-          status?: Database["public"]["Enums"]["correcao_status"]
-          pontuacao_opcional?: number | null
-          criterios_json?: Json | null
           created_at?: string
+          gdrive_root_folder_id?: string | null
+          provider?: string
+          retention_days?: number | null
           updated_at?: string
+          user_id: string
         }
         Update: {
-          id?: string
-          sessoes_exercicios_execucoes_id?: string
-          personal_user_id?: string
-          texto?: string
-          status?: Database["public"]["Enums"]["correcao_status"]
-          pontuacao_opcional?: number | null
-          criterios_json?: Json | null
           created_at?: string
+          gdrive_root_folder_id?: string | null
+          provider?: string
+          retention_days?: number | null
           updated_at?: string
+          user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "correcoes_sessoes_exercicios_execucoes_id_fkey"
-            columns: ["sessoes_exercicios_execucoes_id"]
-            isOneToOne: false
-            referencedRelation: "sessoes_exercicios_execucoes"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      correcoes_midias: {
-        Row: {
-          id: string
-          correcao_id: string
-          tipo: Database["public"]["Enums"]["midia_tipo"]
-          path: string
-          duracao_seg: number | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          correcao_id: string
-          tipo: Database["public"]["Enums"]["midia_tipo"]
-          path: string
-          duracao_seg?: number | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          correcao_id?: string
-          tipo?: Database["public"]["Enums"]["midia_tipo"]
-          path?: string
-          duracao_seg?: number | null
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "correcoes_midias_correcao_id_fkey"
-            columns: ["correcao_id"]
-            isOneToOne: false
-            referencedRelation: "correcoes"
-            referencedColumns: ["id"]
-          }
-        ]
+        Relationships: []
       }
       tipos_microciclos: {
         Row: {
@@ -586,7 +809,7 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "tipos_microciclos"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
       treinos: {
@@ -631,162 +854,42 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "periodizacoes"
             referencedColumns: ["id"]
-          }
-        ]
-      }
-      // +++ NOVAS TABELAS +++
-      alongamento_tags: {
-        Row: {
-          id: string
-          user_id: string
-          nome: string
-          descricao: string | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          nome: string
-          descricao?: string | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          nome?: string
-          descricao?: string | null
-          created_at?: string
-        }
-        Relationships: [] // (FK para auth.users não é mapeada aqui)
-      }
-
-      alongamentos: {
-        Row: {
-          id: string
-          user_id: string
-          descricao: string
-          grupo_muscular: Database['public']['Enums']['grupo_muscular']
-          forma_execucao: string | null
-          musculos_envolvidos: string | null
-          observacoes: string | null
-          link_video: string | null
-          tag_id: string
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          descricao: string
-          grupo_muscular: Database['public']['Enums']['grupo_muscular']
-          forma_execucao?: string | null
-          musculos_envolvidos?: string | null
-          observacoes?: string | null
-          link_video?: string | null
-          tag_id: string
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          descricao?: string
-          grupo_muscular?: Database['public']['Enums']['grupo_muscular']
-          forma_execucao?: string | null
-          musculos_envolvidos?: string | null
-          observacoes?: string | null
-          link_video?: string | null
-          tag_id?: string
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: 'alongamentos_tag_id_fkey'
-            columns: ['tag_id']
-            isOneToOne: false
-            referencedRelation: 'alongamento_tags'
-            referencedColumns: ['id']
           },
         ]
       }
-
-      sessoes_alongamentos: {
-        Row: {
-          id: string
-          sessao_id: string
-          alongamento_id: string
-          ordem: number
-          observacoes: string | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          sessao_id: string
-          alongamento_id: string
-          ordem?: number
-          observacoes?: string | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          sessao_id?: string
-          alongamento_id?: string
-          ordem?: number
-          observacoes?: string | null
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: 'sessoes_alongamentos_sessao_id_fkey'
-            columns: ['sessao_id']
-            isOneToOne: false
-            referencedRelation: 'sessoes'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'sessoes_alongamentos_alongamento_id_fkey'
-            columns: ['alongamento_id']
-            isOneToOne: false
-            referencedRelation: 'alongamentos'
-            referencedColumns: ['id']
-          },
-        ]
-      }
-
       treinos_execucoes: {
         Row: {
-          id: string
           aluno_id: string
-          treino_id: string
-          sessao_id: string
-          status: string
-          started_at: string
-          ended_at: string | null
-          observacoes: string | null
           created_at: string
+          ended_at: string | null
+          id: string
+          observacoes: string | null
+          sessao_id: string
+          started_at: string
+          status: string
+          treino_id: string
         }
         Insert: {
-          id?: string
           aluno_id: string
-          treino_id: string
-          sessao_id: string
-          status?: string
-          started_at?: string
-          ended_at?: string | null
-          observacoes?: string | null
           created_at?: string
+          ended_at?: string | null
+          id?: string
+          observacoes?: string | null
+          sessao_id: string
+          started_at?: string
+          status?: string
+          treino_id: string
         }
         Update: {
-          id?: string
           aluno_id?: string
-          treino_id?: string
-          sessao_id?: string
-          status?: string
-          started_at?: string
-          ended_at?: string | null
-          observacoes?: string | null
           created_at?: string
+          ended_at?: string | null
+          id?: string
+          observacoes?: string | null
+          sessao_id?: string
+          started_at?: string
+          status?: string
+          treino_id?: string
         }
         Relationships: [
           {
@@ -797,19 +900,19 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "treinos_execucoes_sessao_id_fkey"
+            columns: ["sessao_id"]
+            isOneToOne: false
+            referencedRelation: "sessoes"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "treinos_execucoes_treino_id_fkey"
             columns: ["treino_id"]
             isOneToOne: false
             referencedRelation: "treinos"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "treinos_execucoes_sessao_id_fkey"
-            columns: ["sessao_id"]
-            isOneToOne: false
-            referencedRelation: "sessoes"
-            referencedColumns: ["id"]
-          }
         ]
       }
     }
@@ -817,32 +920,86 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-    listar_alongamentos_sessao: {
-      Args: { p_sessao_id: string }
-      Returns: {
-        sessao_along_id: string
-        sessao_id: string
-        ordem: number
-        observacoes: string | null
-        alongamento_id: string
-        descricao: string
-        grupo_muscular: Database['public']['Enums']['grupo_muscular']
-        forma_execucao: string | null
-        musculos_envolvidos: string | null
-        along_observacoes: string | null
-        link_video: string | null
-        tag_id: string
-        tag_nome: string
-      }[]
+      adicionar_alongamentos_por_tag: {
+        Args: { p_sessao_id: string; p_tag_id: string }
+        Returns: number
+      }
+      gtrgm_compress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gtrgm_decompress: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gtrgm_in: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      gtrgm_options: {
+        Args: { "": unknown }
+        Returns: undefined
+      }
+      gtrgm_out: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      is_exec_do_aluno: {
+        Args: { exec_id: string }
+        Returns: boolean
+      }
+      is_exec_do_meu_aluno: {
+        Args: { exec_id: string }
+        Returns: boolean
+      }
+      listar_alongamentos_sessao: {
+        Args: { p_sessao_id: string }
+        Returns: {
+          along_observacoes: string
+          alongamento_id: string
+          descricao: string
+          forma_execucao: string
+          grupo_muscular: Database["public"]["Enums"]["grupo_muscular"]
+          link_video: string
+          musculos_envolvidos: string
+          observacoes: string
+          ordem: number
+          sessao_along_id: string
+          sessao_id: string
+          tag_id: string
+          tag_nome: string
+        }[]
+      }
+      listar_historico_execucao: {
+        Args: { exec_id: string; lim?: number }
+        Returns: {
+          aluno_id: string
+          correcao_created_at: string
+          correcao_id: string
+          correcao_status: Database["public"]["Enums"]["correcao_status"]
+          correcao_texto: string
+          ended_at: string
+          exec_id: string
+          exercicio_id: string
+          started_at: string
+          video_path: string
+        }[]
+      }
+      set_limit: {
+        Args: { "": number }
+        Returns: number
+      }
+      show_limit: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
+      show_trgm: {
+        Args: { "": string }
+        Returns: string[]
+      }
     }
-    ,
-    adicionar_alongamentos_por_tag: {
-      Args: { p_sessao_id: string; p_tag_id: string }
-      Returns: number
-    }
-  }
-
     Enums: {
+      correcao_status: "RASCUNHO" | "ENVIADA"
       grupo_muscular:
         | "Peito"
         | "Costas"
@@ -852,9 +1009,10 @@ export type Database = {
         | "Perna"
         | "Abdômen"
         | "Glúteo"
-      tipo_serie: "WARM-UP" | "FEEDER" | "WORK SET"
-      correcao_status: "RASCUNHO" | "ENVIADA"
       midia_tipo: "FOTO" | "VIDEO"
+      prescricao_tipo_enum: "DETALHADA" | "PERIODIZACAO"
+      tipo_prescricao: "DETALHADA" | "SIMPLES"
+      tipo_serie: "WARM-UP" | "FEEDER" | "WORK SET"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -863,6 +1021,7 @@ export type Database = {
 }
 
 type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
 type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
@@ -981,6 +1140,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      correcao_status: ["RASCUNHO", "ENVIADA"],
       grupo_muscular: [
         "Peito",
         "Costas",
@@ -991,9 +1151,10 @@ export const Constants = {
         "Abdômen",
         "Glúteo",
       ],
-      tipo_serie: ["WARM-UP", "FEEDER", "WORK SET"],
-      correcao_status: ["RASCUNHO", "ENVIADA"],
       midia_tipo: ["FOTO", "VIDEO"],
+      prescricao_tipo_enum: ["DETALHADA", "PERIODIZACAO"],
+      tipo_prescricao: ["DETALHADA", "SIMPLES"],
+      tipo_serie: ["WARM-UP", "FEEDER", "WORK SET"],
     },
   },
 } as const
