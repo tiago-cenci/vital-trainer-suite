@@ -131,88 +131,76 @@ export function useSalvarCorrecao(execId: string) {
 export function useUploadMidiaCorrecao(correcaoId?: string) {
   const qc = useQueryClient();
   const { user } = useAuth();
-  const { data: storage } = useStorageProvider();
 
   return useMutation({
     mutationFn: async (file: File) => {
       if (!correcaoId) throw new Error('Crie/salve um rascunho antes de anexar mídias.');
-      if (!user?.id) throw new Error('Usuário não autenticado.');
 
+      // Detecta tipo
       const isVideo = file.type.startsWith('video/');
       const isImage = file.type.startsWith('image/');
       if (!isVideo && !isImage) throw new Error('Arquivo não suportado.');
 
-      // === FLUXO GDRIVE ===
-      if (storage?.provider === 'gdrive') {
-        // 1) cria o arquivo no Drive
-        const session = (await supabase.auth.getSession()).data.session;
-        const initRes = await fetch(
-          `${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/gdrive_proxy`,
-          {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${session?.access_token}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              action: 'upload-init',
-              fileName: file.name,
-              mimeType: file.type,
-              // opcional: folderId se você garantir subpasta por aluno/correção
-            }),
-          }
-        );
-        const init = await initRes.json();
-        if (!initRes.ok) throw new Error(init?.error || 'upload-init failed');
+      // Obter sessão (token JWT do usuário logado)
+      const session = (await supabase.auth.getSession()).data.session;
+      if (!session?.access_token) throw new Error('Sessão inválida.');
 
-        // 2) envia os bytes via proxy (stream)
-        const upRes = await fetch(
-          `${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/gdrive_proxy?action=upload-bytes&fileId=${encodeURIComponent(init.fileId)}`,
-          {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${session?.access_token}`,
-              'Content-Type': file.type,
-            },
-            body: file,
-          }
-        );
-        const up = await upRes.json();
-        if (!upRes.ok) throw new Error(up?.error || 'upload failed');
+      // 1️⃣ Inicializa upload no Drive (gera fileId e uploadUrl)
+      const initRes = await fetch(
+        `${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/gdrive_proxy`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: 'upload-init',
+            fileName: file.name,
+            mimeType: file.type,
+          }),
+        }
+      );
 
-        // 3) registra em correcoes_midias
-        // usamos o campo `path` para guardar "gdrive:<fileId>"
-        const { error: e2 } = await supabase
-          .from('correcoes_midias')
-          .insert({
-            correcao_id: correcaoId,
-            tipo: isVideo ? 'VIDEO' : 'FOTO',
-            path: `gdrive:${up.fileId}`,
-          });
-        if (e2) throw e2;
+      const init = await initRes.json();
+      if (!initRes.ok) throw new Error(init?.error || 'Falha no upload-init');
 
-        return `gdrive:${up.fileId}`;
-      }
+      // 2️⃣ Envia o binário diretamente para a function (ela encaminha ao Drive)
+      const upRes = await fetch(
+        `${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/gdrive_proxy?action=upload-bytes&fileId=${encodeURIComponent(
+          init.fileId
+        )}`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            'Content-Type': file.type,
+          },
+          body: file, // ✅ ENVIA OS BYTES DIRETO
+        }
+      );
 
-      // === FLUXO SUPABASE (antigo) ===
-      const path = `${correcaoId}/${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
-      const { error } = await supabase.storage.from('correcoes').upload(path, file, { upsert: false });
-      if (error) throw error;
+      const up = await upRes.json();
+      if (!upRes.ok) throw new Error(up?.error || 'Falha no upload');
 
-      const { error: e2 } = await supabase
-        .from('correcoes_midias')
-        .insert({ correcao_id: correcaoId, tipo: isVideo ? 'VIDEO' : 'FOTO', path });
+      // 3️⃣ Grava na tabela correcoes_midias (path = "gdrive:<id>")
+      const { error: e2 } = await supabase.from('correcoes_midias').insert({
+        correcao_id: correcaoId,
+        tipo: isVideo ? 'VIDEO' : 'FOTO',
+        path: `gdrive:${init.fileId}`, // 🔑 identifica que veio do Drive
+      });
       if (e2) throw e2;
 
-      return path;
+      return init.fileId;
     },
+
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['correcoes:midias', correcaoId] });
       toast({ title: 'Mídia anexada', description: 'Upload concluído com sucesso.' });
     },
     onError: (err: any) => {
+      console.error('Erro upload GDrive:', err);
       toast({ title: 'Erro no upload', description: err.message, variant: 'destructive' });
     },
   });
 }
-
