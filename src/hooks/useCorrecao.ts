@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from '@/hooks/use-toast';
 import type { Tables, TablesInsert, TablesUpdate, Enums } from '@/integrations/supabase/types';
+import { useStorageProvider } from './useStorageProvider';
 type Correcao = Tables<'correcoes'>;
 type CorrecaoInsert = TablesInsert<'correcoes'>;
 type CorrecaoUpdate = TablesUpdate<'correcoes'>;
@@ -129,15 +130,71 @@ export function useSalvarCorrecao(execId: string) {
 
 export function useUploadMidiaCorrecao(correcaoId?: string) {
   const qc = useQueryClient();
+  const { user } = useAuth();
+  const { data: storage } = useStorageProvider();
 
   return useMutation({
     mutationFn: async (file: File) => {
       if (!correcaoId) throw new Error('Crie/salve um rascunho antes de anexar mídias.');
+      if (!user?.id) throw new Error('Usuário não autenticado.');
 
       const isVideo = file.type.startsWith('video/');
       const isImage = file.type.startsWith('image/');
       if (!isVideo && !isImage) throw new Error('Arquivo não suportado.');
 
+      // === FLUXO GDRIVE ===
+      if (storage?.provider === 'gdrive') {
+        // 1) cria o arquivo no Drive
+        const session = (await supabase.auth.getSession()).data.session;
+        const initRes = await fetch(
+          `${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/gdrive_proxy`,
+          {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${session?.access_token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              action: 'upload-init',
+              fileName: file.name,
+              mimeType: file.type,
+              // opcional: folderId se você garantir subpasta por aluno/correção
+            }),
+          }
+        );
+        const init = await initRes.json();
+        if (!initRes.ok) throw new Error(init?.error || 'upload-init failed');
+
+        // 2) envia os bytes via proxy (stream)
+        const upRes = await fetch(
+          `${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/gdrive_proxy?action=upload-bytes&fileId=${encodeURIComponent(init.fileId)}`,
+          {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${session?.access_token}`,
+              'Content-Type': file.type,
+            },
+            body: file,
+          }
+        );
+        const up = await upRes.json();
+        if (!upRes.ok) throw new Error(up?.error || 'upload failed');
+
+        // 3) registra em correcoes_midias
+        // usamos o campo `path` para guardar "gdrive:<fileId>"
+        const { error: e2 } = await supabase
+          .from('correcoes_midias')
+          .insert({
+            correcao_id: correcaoId,
+            tipo: isVideo ? 'VIDEO' : 'FOTO',
+            path: `gdrive:${up.fileId}`,
+          });
+        if (e2) throw e2;
+
+        return `gdrive:${up.fileId}`;
+      }
+
+      // === FLUXO SUPABASE (antigo) ===
       const path = `${correcaoId}/${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
       const { error } = await supabase.storage.from('correcoes').upload(path, file, { upsert: false });
       if (error) throw error;
@@ -158,3 +215,4 @@ export function useUploadMidiaCorrecao(correcaoId?: string) {
     },
   });
 }
+
