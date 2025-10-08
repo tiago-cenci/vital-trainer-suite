@@ -11,6 +11,9 @@ type CorrecaoStatus = Enums<'correcao_status'>;
 
 type Exec = Tables<'sessoes_exercicios_execucoes'>;
 type Midia = Tables<'correcoes_midias'>;
+// pegue a URL das functions uma vez
+const FUNCTIONS_URL = import.meta.env.VITE_SUPABASE_FUNCTIONS_URL as string;
+
 
 export function useExecucao(execId: string) {
   return useQuery({
@@ -146,42 +149,39 @@ export function useUploadMidiaCorrecao(correcaoId?: string) {
       if (!session?.access_token) throw new Error('Sessão inválida.');
 
       // 1️⃣ Inicializa upload no Drive (gera fileId e uploadUrl)
-      const initRes = await fetch(
-        `${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/gdrive_proxy`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            action: 'upload-init',
-            fileName: file.name,
-            mimeType: file.type,
-          }),
-        }
-      );
+      const initRes = await fetch(`${FUNCTIONS_URL}/gdrive_proxy`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'upload-init',
+          fileName: file.name,
+          mimeType: file.type,
+        }),
+      });
 
       const init = await initRes.json();
       if (!initRes.ok) throw new Error(init?.error || 'Falha no upload-init');
 
       // 2️⃣ Envia o binário diretamente para a function (ela encaminha ao Drive)
+      // 2) envia os bytes via proxy (stream)
       const upRes = await fetch(
-        `${import.meta.env.VITE_SUPABASE_FUNCTIONS_URL}/gdrive_proxy?action=upload-bytes&fileId=${encodeURIComponent(
-          init.fileId
-        )}`,
+        `${FUNCTIONS_URL}/gdrive_proxy?action=upload-bytes&fileId=${encodeURIComponent(init.fileId)}`,
         {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${session.access_token}`,
             'Content-Type': file.type,
           },
-          body: file, // ✅ ENVIA OS BYTES DIRETO
+          body: file,
         }
       );
 
       const up = await upRes.json();
       if (!upRes.ok) throw new Error(up?.error || 'Falha no upload');
+    
 
       // 3️⃣ Grava na tabela correcoes_midias (path = "gdrive:<id>")
       const { error: e2 } = await supabase.from('correcoes_midias').insert({
