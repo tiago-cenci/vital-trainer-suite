@@ -16,8 +16,33 @@ import { useAlunos } from '@/hooks/useAlunos';
 import { usePeriodizacoes } from '@/hooks/usePeriodizacoes';
 import { SessoesBuilder } from './SessoesBuilder';
 import type { TreinoCompleto } from '@/hooks/useTreinos';
-import { SessaoAlongamentosManager } from '@/components/alongamentos/SessaoAlongamentosManager';
+import type { Tables } from '@/integrations/supabase/types';
 
+type Exercicio = Tables<'exercicios'>;
+type Serie = Tables<'series'>;
+
+// Estrutura local para exercícios (modo offline)
+export interface SessaoExercicioLocal {
+  id?: string; // Se começar com "temp_", é temporário
+  exercicio_id: string;
+  ordem: number;
+  prescricao_tipo: 'DETALHADA' | 'PERIODIZACAO';
+  series_qtd?: number;
+  reps_min?: number;
+  reps_max?: number;
+  descanso_seg?: number;
+  usar_periodizacao: boolean;
+  exercicios?: Exercicio;
+  series?: Serie[];
+}
+
+// Estrutura local para sessões (modo offline)
+interface SessaoLocal {
+  id?: string;
+  nome: string;
+  ordem: number;
+  exercicios: SessaoExercicioLocal[];
+}
 
 const treinoSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório'),
@@ -39,15 +64,9 @@ interface TreinoFormProps {
   isSubmitting?: boolean;
 }
 
-interface Sessao {
-  id?: string;
-  nome: string;
-  ordem: number;
-}
-
 export function TreinoForm({ treino, onSubmit, onCancel, isSubmitting }: TreinoFormProps) {
   const [currentStep, setCurrentStep] = useState(1);
-  const [sessoes, setSessoes] = useState<Sessao[]>([]);
+  const [sessoes, setSessoes] = useState<SessaoLocal[]>([]);
   const [usarPeriodizacao, setUsarPeriodizacao] = useState(false);
 
   const { alunos } = useAlunos();
@@ -64,10 +83,10 @@ export function TreinoForm({ treino, onSubmit, onCancel, isSubmitting }: TreinoF
     resolver: zodResolver(treinoSchema),
     defaultValues: {
       nome: '',
-      aluno_id: undefined,           // <- nunca ""
+      aluno_id: undefined,
       sessoes_semanais: 5,
       usar_periodizacao: false,
-      periodizacao_id: undefined,    // <- nunca ""
+      periodizacao_id: undefined,
     }
   });
 
@@ -76,60 +95,77 @@ export function TreinoForm({ treino, onSubmit, onCancel, isSubmitting }: TreinoF
     (p) => p?.id && p.id === (watchedValues.periodizacao_id ?? '')
   );
 
-  // Initialize form when editing
+  // Inicializar form quando editando
   useEffect(() => {
-  const alunosProntos = (alunos?.length ?? 0) > 0;
-  const perProntas   = (periodizacoes?.length ?? 0) > 0;
+    const alunosProntos = (alunos?.length ?? 0) > 0;
+    const perProntas = (periodizacoes?.length ?? 0) > 0;
 
-  if (treino && alunosProntos && perProntas) {
-    reset({
-      nome: treino.nome,
-      aluno_id: String(treino.aluno_id),
-      sessoes_semanais: treino.sessoes_semanais ?? 3,
-      usar_periodizacao: !!treino.periodizacao_id,
-      periodizacao_id: treino.periodizacao_id ? String(treino.periodizacao_id) : undefined,
-    });
-    setUsarPeriodizacao(!!treino.periodizacao_id);
-    setSessoes((treino.sessoes ?? []).map((s, i) => ({
-      id: s.id ? String(s.id) : undefined,
-      nome: s.nome,
-      ordem: i + 1,
-      // opcional: exercicios: s.exercicios ?? []
-    })));
-  }
-}, [treino, alunos?.length, periodizacoes?.length, reset]);
+    if (treino && alunosProntos && perProntas) {
+      reset({
+        nome: treino.nome,
+        aluno_id: String(treino.aluno_id),
+        sessoes_semanais: treino.sessoes_semanais ?? 3,
+        usar_periodizacao: !!treino.periodizacao_id,
+        periodizacao_id: treino.periodizacao_id ? String(treino.periodizacao_id) : undefined,
+      });
+      setUsarPeriodizacao(!!treino.periodizacao_id);
+      
+      // Carregar sessões e exercícios do treino
+      const sessoesComExercicios: SessaoLocal[] = (treino.sessoes ?? []).map((s, i) => ({
+        id: String(s.id),
+        nome: s.nome,
+        ordem: i + 1,
+        exercicios: (s.sessoes_exercicios ?? []).map(se => ({
+          id: String(se.id),
+          exercicio_id: String(se.exercicio_id),
+          ordem: se.ordem,
+          prescricao_tipo: se.prescricao_tipo,
+          series_qtd: se.series_qtd,
+          reps_min: se.reps_min,
+          reps_max: se.reps_max,
+          descanso_seg: se.descanso_seg,
+          usar_periodizacao: se.usar_periodizacao,
+          exercicios: se.exercicios,
+          series: se.series || []
+        }))
+      }));
+      
+      setSessoes(sessoesComExercicios);
+    }
+  }, [treino, alunos?.length, periodizacoes?.length, reset]);
 
-
-  // Generate default sessions when sessoes_semanais changes (create mode) ou sync quando edita
+  // Gerar sessões padrão quando sessoes_semanais mudar (modo criação)
   useEffect(() => {
     if (watchedValues.sessoes_semanais) {
-      // Se não há treino (modo criação) OU há treino mas as sessões estão vazias
       if (!treino || sessoes.length === 0) {
-        const defaultSessions = Array.from({ length: watchedValues.sessoes_semanais }, (_, i) => ({
-          nome: String.fromCharCode(65 + i), // A, B, C, ...
-          ordem: i + 1
-        }));
+        const defaultSessions: SessaoLocal[] = Array.from(
+          { length: watchedValues.sessoes_semanais }, 
+          (_, i) => ({
+            nome: String.fromCharCode(65 + i), // A, B, C, ...
+            ordem: i + 1,
+            exercicios: []
+          })
+        );
         setSessoes(defaultSessions);
       }
     }
   }, [watchedValues.sessoes_semanais, treino?.id]);
 
-  // Sincronizar número de sessões quando muda sem recriar tudo
+  // Sincronizar número de sessões
   useEffect(() => {
     const sessoesSemanais = watchedValues.sessoes_semanais;
     if (sessoesSemanais && sessoes.length > 0 && sessoes.length !== sessoesSemanais) {
       const newSessoes = [...sessoes];
       
       if (newSessoes.length < sessoesSemanais) {
-        // Adicionar novas sessões
         for (let i = newSessoes.length; i < sessoesSemanais; i++) {
           newSessoes.push({
             nome: String.fromCharCode(65 + i),
-            ordem: i + 1
+            ordem: i + 1,
+            exercicios: []
           });
         }
       } else if (newSessoes.length > sessoesSemanais) {
-        // Remover sessões extras
         newSessoes.splice(sessoesSemanais);
       }
       
@@ -137,11 +173,12 @@ export function TreinoForm({ treino, onSubmit, onCancel, isSubmitting }: TreinoF
     }
   }, [watchedValues.sessoes_semanais, sessoes.length]);
 
-const handleNext: React.MouseEventHandler<HTMLButtonElement> = (e) => {
-  e.preventDefault();
-  e.stopPropagation();
-  setCurrentStep((s) => Math.min(3, s + 1));
-};
+  const handleNext: React.MouseEventHandler<HTMLButtonElement> = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCurrentStep((s) => Math.min(3, s + 1));
+  };
+  
   const handlePrevious = () => setCurrentStep((s) => Math.max(1, s - 1));
 
   const handleFormSubmit = (data: TreinoFormData) => {
@@ -157,8 +194,14 @@ const handleNext: React.MouseEventHandler<HTMLButtonElement> = (e) => {
     setUsarPeriodizacao(checked);
     setValue('usar_periodizacao', checked);
     if (!checked) {
-      setValue('periodizacao_id', undefined); // <- limpe para undefined
+      setValue('periodizacao_id', undefined);
     }
+  };
+
+  const handleExerciciosChange = (sessaoIndex: number, exercicios: SessaoExercicioLocal[]) => {
+    setSessoes(prev => prev.map((s, i) => 
+      i === sessaoIndex ? { ...s, exercicios } : s
+    ));
   };
 
   const renderStep1 = () => (
@@ -172,11 +215,10 @@ const handleNext: React.MouseEventHandler<HTMLButtonElement> = (e) => {
       <div className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="aluno_id">Aluno *</Label>
-         <Select
-  value={watch('aluno_id') ?? undefined}
-  onValueChange={(v) => setValue('aluno_id', v, { shouldDirty:true })}
->
-
+          <Select
+            value={watch('aluno_id') ?? undefined}
+            onValueChange={(v) => setValue('aluno_id', v, { shouldDirty: true })}
+          >
             <SelectTrigger>
               <SelectValue placeholder="Selecione um aluno" />
             </SelectTrigger>
@@ -224,7 +266,6 @@ const handleNext: React.MouseEventHandler<HTMLButtonElement> = (e) => {
               ))}
             </SelectContent>
           </Select>
-
           {errors.sessoes_semanais && (
             <p className="text-sm text-destructive">{errors.sessoes_semanais.message}</p>
           )}
@@ -303,66 +344,46 @@ const handleNext: React.MouseEventHandler<HTMLButtonElement> = (e) => {
       </div>
 
       <SessoesBuilder
-        sessoes={sessoes}
-        setSessoes={setSessoes}
+        sessoes={sessoes.map(s => ({ id: s.id, nome: s.nome, ordem: s.ordem }))}
+        setSessoes={(newSessoes) => {
+          setSessoes(prev => newSessoes.map((ns, i) => ({
+            ...ns,
+            exercicios: prev[i]?.exercicios || []
+          })));
+        }}
         sessoesSemanais={watchedValues.sessoes_semanais || 3}
       />
     </div>
   );
 
-  const renderStep3 = () => {
-    if (!treino?.id) {
-      return (
-        <div className="space-y-6">
-          <div className="text-center">
-            <Dumbbell className="h-12 w-12 mx-auto text-primary mb-4" />
-            <h3 className="text-lg font-semibold">Exercícios por Sessão</h3>
-            <p className="text-muted-foreground">Configure os exercícios para cada sessão</p>
-          </div>
-
-          <div className="text-center py-8 text-muted-foreground">
-            <p>Salve o treino primeiro para adicionar exercícios.</p>
-            <p className="text-sm mt-2">Após criar o treino, você poderá editá-lo para adicionar exercícios.</p>
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="space-y-6">
-        <div className="text-center">
-          <Dumbbell className="h-12 w-12 mx-auto text-primary mb-4" />
-          <h3 className="text-lg font-semibold">Exercícios por Sessão</h3>
-          <p className="text-muted-foreground">Configure os exercícios para cada sessão</p>
-        </div>
-        
-        <div className="space-y-4">
-          {sessoes.map((sessao) => {
-            const initialEx = treino?.sessoes?.find((s) => String(s.id) === String(sessao.id))?.sessoes_exercicios as any[] | undefined;
-            return (
-              <SessaoExerciciosBuilder
-                key={sessao.id || sessao.ordem}
-                sessaoId={sessao.id || ''}
-                sessaoNome={sessao.nome}
-                usarPeriodizacao={watchedValues.usar_periodizacao || false}
-                initialExercicios={initialEx as any}
-              />
-            );
-          })}
-        </div>
-
-        {sessoes.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground">
-            <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>Configure as sessões no passo anterior</p>
-          </div>
-        )}
+  const renderStep3 = () => (
+    <div className="space-y-6">
+      <div className="text-center">
+        <Dumbbell className="h-12 w-12 mx-auto text-primary mb-4" />
+        <h3 className="text-lg font-semibold">Exercícios por Sessão</h3>
+        <p className="text-muted-foreground">Configure os exercícios para cada sessão</p>
       </div>
-    );
-  };
+      
+      <div className="space-y-4">
+        {sessoes.map((sessao, index) => (
+          <SessaoExerciciosBuilder
+            key={sessao.id || sessao.ordem}
+            sessaoNome={sessao.nome}
+            periodizacaoId={watchedValues.usar_periodizacao ? watchedValues.periodizacao_id : undefined}
+            exercicios={sessao.exercicios}
+            onExerciciosChange={(exercicios) => handleExerciciosChange(index, exercicios)}
+          />
+        ))}
+      </div>
 
-  const canProceedToStep2 = Boolean(watchedValues.nome && watchedValues.aluno_id && watchedValues.sessoes_semanais);
-  const canProceedToStep3 = sessoes.length > 0;
+      {sessoes.length === 0 && (
+        <div className="text-center py-8 text-muted-foreground">
+          <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+          <p>Configure as sessões no passo anterior</p>
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-6">
@@ -417,12 +438,10 @@ const handleNext: React.MouseEventHandler<HTMLButtonElement> = (e) => {
               type="button"
               onClick={handleNext}
               formNoValidate
-              data-no-close // (se usar Radix/Dialog, útil para checar wrappers)
             >
               Próximo
               <ChevronRight className="h-4 w-4 ml-2" />
             </Button>
-
           ) : (
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? 'Salvando...' : (treino ? 'Atualizar' : 'Criar Treino')}

@@ -5,16 +5,24 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Plus, Trash2, Zap, Flame, Target } from 'lucide-react';
-import { useSessoesExercicios } from '@/hooks/useSessoesExercicios';
 import type { Tables } from '@/integrations/supabase/types';
 
 type TipoSerie = 'WORK SET' | 'WARM-UP' | 'FEEDER';
+type Exercicio = Tables<'exercicios'>;
+type Serie = Tables<'series'>;
+
+interface SessaoExercicioLocal {
+  id?: string;
+  exercicio_id: string;
+  exercicios?: Exercicio;
+  series?: Serie[];
+}
 
 interface SeriesManagerProps {
-  sessaoExercicioId: string;
+  exercicio: SessaoExercicioLocal;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSeriesChange?: () => void;
+  onSeriesChange: (exercicioId: string, series: Serie[]) => void;
 }
 
 const TIPOS_SERIES: Array<{ value: TipoSerie; label: string; icon: React.ReactNode; description: string }> = [
@@ -38,38 +46,30 @@ const TIPOS_SERIES: Array<{ value: TipoSerie; label: string; icon: React.ReactNo
   }
 ];
 
-export function SeriesManager({ sessaoExercicioId, open, onOpenChange, onSeriesChange }: SeriesManagerProps) {
+export function SeriesManager({ exercicio, open, onOpenChange, onSeriesChange }: SeriesManagerProps) {
   const [selectedTipoSerie, setSelectedTipoSerie] = useState<TipoSerie>('WORK SET');
 
-  const {
-    sessoesExercicios,
-    addSerie,
-    removeSerie,
-    isAddingSerie,
-    isRemovingSerie
-  } = useSessoesExercicios(''); // Passamos vazio pois vamos buscar por exercício específico
-
-  // Encontrar o exercício específico
-  const exercicioAtual = sessoesExercicios.find(se => se.id === sessaoExercicioId);
-  const seriesAtuais = exercicioAtual?.series || [];
-
-  // Verificar quais tipos já existem
+  const seriesAtuais = exercicio.series || [];
   const tiposJaAdicionados = seriesAtuais.map(s => s.tipo);
 
   const handleAddSerie = () => {
     if (!selectedTipoSerie || tiposJaAdicionados.includes(selectedTipoSerie)) return;
     
-    addSerie({
-      sessao_exercicio_id: sessaoExercicioId,
-      tipo: selectedTipoSerie
-    });
+    const novaSerie: Serie = {
+      id: `temp_${crypto.randomUUID()}`,
+      sessao_exercicio_id: exercicio.id || '',
+      tipo: selectedTipoSerie,
+      created_at: new Date().toISOString()
+    };
     
-    onSeriesChange?.();
+    onSeriesChange(exercicio.id!, [...seriesAtuais, novaSerie]);
   };
 
   const handleRemoveSerie = (serieId: string) => {
-    removeSerie(serieId);
-    onSeriesChange?.();
+    onSeriesChange(
+      exercicio.id!, 
+      seriesAtuais.filter(s => s.id !== serieId)
+    );
   };
 
   const tiposDisponiveis = TIPOS_SERIES.filter(tipo => !tiposJaAdicionados.includes(tipo.value));
@@ -85,11 +85,11 @@ export function SeriesManager({ sessaoExercicioId, open, onOpenChange, onSeriesC
         </DialogHeader>
 
         <div className="space-y-4">
-          {exercicioAtual && (
+          {exercicio.exercicios && (
             <div className="space-y-2">
-              <p className="font-medium">{exercicioAtual.exercicios.nome}</p>
+              <p className="font-medium">{exercicio.exercicios.nome}</p>
               <div className="flex flex-wrap gap-1">
-                {exercicioAtual.exercicios.grupos_musculares?.map((grupo: any) => (
+                {exercicio.exercicios.grupos_musculares?.map((grupo: any) => (
                   <Badge key={grupo} variant="outline" className="text-xs">
                     {grupo}
                   </Badge>
@@ -126,7 +126,6 @@ export function SeriesManager({ sessaoExercicioId, open, onOpenChange, onSeriesC
                         variant="ghost"
                         size="icon"
                         onClick={() => handleRemoveSerie(serie.id)}
-                        disabled={isRemovingSerie}
                         className="text-muted-foreground hover:text-destructive"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -168,11 +167,11 @@ export function SeriesManager({ sessaoExercicioId, open, onOpenChange, onSeriesC
                   <Button
                     type="button"
                     onClick={handleAddSerie}
-                    disabled={isAddingSerie || !selectedTipoSerie || tiposJaAdicionados.includes(selectedTipoSerie)}
+                    disabled={!selectedTipoSerie || tiposJaAdicionados.includes(selectedTipoSerie)}
                     className="w-full"
                   >
                     <Plus className="h-4 w-4 mr-2" />
-                    {isAddingSerie ? 'Adicionando...' : 'Adicionar Série'}
+                    Adicionar Série
                   </Button>
                 </div>
               </div>

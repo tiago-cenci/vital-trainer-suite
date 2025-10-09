@@ -95,26 +95,16 @@ export function useTreinos(filters: TreinoFilters = {}) {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: {
-      nome: string;
-      aluno_id: string;
-      sessoes_semanais: number;
-      periodizacao_id?: string;
-      sessoes: Array<{
-        nome: string;
-        ordem: number;
-      }>;
-    }) => {
+    mutationFn: async (data: any) => {
       if (!user) throw new Error('Usuário não autenticado');
 
-      // Create treino
       const { data: treino, error: treinoError } = await supabase
         .from('treinos')
         .insert({
           nome: data.nome,
           aluno_id: data.aluno_id,
           sessoes_semanais: data.sessoes_semanais,
-          periodizacao_id: data.periodizacao_id,
+          periodizacao_id: data.periodizacao_id || null,
           ativo: false
         })
         .select()
@@ -122,18 +112,56 @@ export function useTreinos(filters: TreinoFilters = {}) {
 
       if (treinoError) throw treinoError;
 
-      // Create sessoes
-      if (data.sessoes.length > 0) {
-        const sessoesData = data.sessoes.map(sessao => ({
-          treino_id: treino.id,
-          nome: sessao.nome
-        }));
-
-        const { error: sessoesError } = await supabase
+      for (const sessao of data.sessoes) {
+        const { data: novaSessao, error: sessaoError } = await supabase
           .from('sessoes')
-          .insert(sessoesData);
+          .insert({
+            treino_id: treino.id,
+            nome: sessao.nome,
+            ordem: sessao.ordem
+          })
+          .select()
+          .single();
 
-        if (sessoesError) throw sessoesError;
+        if (sessaoError) throw sessaoError;
+
+        if (sessao.exercicios?.length > 0) {
+          for (const ex of sessao.exercicios) {
+            const { data: novoSE, error: seError } = await supabase
+              .from('sessoes_exercicios')
+              .insert({
+                sessao_id: novaSessao.id,
+                exercicio_id: ex.exercicio_id,
+                ordem: ex.ordem,
+                prescricao_tipo: ex.prescricao_tipo,
+                series_qtd: ex.series_qtd,
+                reps_min: ex.reps_min,
+                reps_max: ex.reps_max,
+                descanso_seg: ex.descanso_seg,
+                usar_periodizacao: ex.usar_periodizacao
+              })
+              .select()
+              .single();
+
+            if (seError) throw seError;
+
+            if (ex.series?.length > 0) {
+              const seriesData = ex.series
+                .filter((s: any) => !s.id.startsWith('temp_'))
+                .map((s: any) => ({
+                  sessao_exercicio_id: novoSE.id,
+                  tipo: s.tipo
+                }));
+              
+              if (seriesData.length > 0) {
+                const { error: seriesError } = await supabase
+                  .from('series')
+                  .insert(seriesData);
+                if (seriesError) throw seriesError;
+              }
+            }
+          }
+        }
       }
 
       return treino;
@@ -165,6 +193,7 @@ export function useTreinos(filters: TreinoFilters = {}) {
         id?: string;
         nome: string;
         ordem: number;
+        exercicios?: Array<any>;
       }>;
     }) => {
       if (!user) throw new Error('Usuário não autenticado');
@@ -182,7 +211,7 @@ export function useTreinos(filters: TreinoFilters = {}) {
 
       if (updateError) throw updateError;
 
-      // Delete existing sessoes
+      // Delete existing sessoes (cascade will delete exercicios and series)
       const { error: deleteError } = await supabase
         .from('sessoes')
         .delete()
@@ -190,18 +219,56 @@ export function useTreinos(filters: TreinoFilters = {}) {
 
       if (deleteError) throw deleteError;
 
-      // Create new sessoes
-      if (data.sessoes.length > 0) {
-        const sessoesData = data.sessoes.map(sessao => ({
-          treino_id: data.id,
-          nome: sessao.nome
-        }));
-
-        const { error: sessoesError } = await supabase
+      // Create new sessoes and exercicios
+      for (const sessao of data.sessoes) {
+        const { data: novaSessao, error: sessaoError } = await supabase
           .from('sessoes')
-          .insert(sessoesData);
+          .insert({
+            treino_id: data.id,
+            nome: sessao.nome,
+            ordem: sessao.ordem
+          })
+          .select()
+          .single();
 
-        if (sessoesError) throw sessoesError;
+        if (sessaoError) throw sessaoError;
+
+        // Create exercicios for this sessao
+        if (sessao.exercicios && sessao.exercicios.length > 0) {
+          for (const exercicio of sessao.exercicios) {
+            const { data: novoSessaoExercicio, error: exercicioError } = await supabase
+              .from('sessoes_exercicios')
+              .insert({
+                sessao_id: novaSessao.id,
+                exercicio_id: exercicio.exercicio_id,
+                ordem: exercicio.ordem,
+                prescricao_tipo: exercicio.prescricao_tipo,
+                series_qtd: exercicio.series_qtd,
+                reps_min: exercicio.reps_min,
+                reps_max: exercicio.reps_max,
+                descanso_seg: exercicio.descanso_seg,
+                usar_periodizacao: exercicio.usar_periodizacao
+              })
+              .select()
+              .single();
+
+            if (exercicioError) throw exercicioError;
+
+            // Create series for this exercicio
+            if (exercicio.series && exercicio.series.length > 0) {
+              const seriesData = exercicio.series.map((serie: any) => ({
+                sessao_exercicio_id: novoSessaoExercicio.id,
+                tipo: serie.tipo
+              }));
+
+              const { error: seriesError } = await supabase
+                .from('series')
+                .insert(seriesData);
+
+              if (seriesError) throw seriesError;
+            }
+          }
+        }
       }
 
       return data;
