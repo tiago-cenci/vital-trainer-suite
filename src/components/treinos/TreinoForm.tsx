@@ -100,16 +100,42 @@ export function TreinoForm({ treino, onSubmit, onCancel, isSubmitting }: TreinoF
 }, [treino, alunos?.length, periodizacoes?.length, reset]);
 
 
-  // Generate default sessions when sessoes_semanais changes (create mode)
+  // Generate default sessions when sessoes_semanais changes (create mode) ou sync quando edita
   useEffect(() => {
-    if (!treino && watchedValues.sessoes_semanais && sessoes.length === 0) {
-      const defaultSessions = Array.from({ length: watchedValues.sessoes_semanais }, (_, i) => ({
-        nome: String.fromCharCode(65 + i), // A, B, C, ...
-        ordem: i + 1
-      }));
-      setSessoes(defaultSessions);
+    if (watchedValues.sessoes_semanais) {
+      // Se não há treino (modo criação) OU há treino mas as sessões estão vazias
+      if (!treino || sessoes.length === 0) {
+        const defaultSessions = Array.from({ length: watchedValues.sessoes_semanais }, (_, i) => ({
+          nome: String.fromCharCode(65 + i), // A, B, C, ...
+          ordem: i + 1
+        }));
+        setSessoes(defaultSessions);
+      }
     }
-  }, [watchedValues.sessoes_semanais, treino, sessoes.length]);
+  }, [watchedValues.sessoes_semanais, treino?.id]);
+
+  // Sincronizar número de sessões quando muda sem recriar tudo
+  useEffect(() => {
+    const sessoesSemanais = watchedValues.sessoes_semanais;
+    if (sessoesSemanais && sessoes.length > 0 && sessoes.length !== sessoesSemanais) {
+      const newSessoes = [...sessoes];
+      
+      if (newSessoes.length < sessoesSemanais) {
+        // Adicionar novas sessões
+        for (let i = newSessoes.length; i < sessoesSemanais; i++) {
+          newSessoes.push({
+            nome: String.fromCharCode(65 + i),
+            ordem: i + 1
+          });
+        }
+      } else if (newSessoes.length > sessoesSemanais) {
+        // Remover sessões extras
+        newSessoes.splice(sessoesSemanais);
+      }
+      
+      setSessoes(newSessoes);
+    }
+  }, [watchedValues.sessoes_semanais, sessoes.length]);
 
 const handleNext: React.MouseEventHandler<HTMLButtonElement> = (e) => {
   e.preventDefault();
@@ -311,14 +337,18 @@ const handleNext: React.MouseEventHandler<HTMLButtonElement> = (e) => {
         </div>
         
         <div className="space-y-4">
-          {sessoes.map((sessao) => (
-            <SessaoExerciciosBuilder
-              key={sessao.id || sessao.ordem}
-              sessaoId={sessao.id || ''}
-              sessaoNome={sessao.nome}
-              usarPeriodizacao={watchedValues.usar_periodizacao || false}
-            />
-          ))}
+          {sessoes.map((sessao) => {
+            const initialEx = treino?.sessoes?.find((s) => String(s.id) === String(sessao.id))?.sessoes_exercicios as any[] | undefined;
+            return (
+              <SessaoExerciciosBuilder
+                key={sessao.id || sessao.ordem}
+                sessaoId={sessao.id || ''}
+                sessaoNome={sessao.nome}
+                usarPeriodizacao={watchedValues.usar_periodizacao || false}
+                initialExercicios={initialEx as any}
+              />
+            );
+          })}
         </div>
 
         {sessoes.length === 0 && (

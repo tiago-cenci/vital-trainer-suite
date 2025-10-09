@@ -18,13 +18,15 @@ interface SessaoExerciciosBuilderProps {
   sessaoNome: string;
   usarPeriodizacao: boolean;
   onExerciciosChange?: () => void;
+  initialExercicios?: SessaoExercicioCompleto[];
 }
 
 export function SessaoExerciciosBuilder({ 
   sessaoId, 
   sessaoNome, 
   usarPeriodizacao,
-  onExerciciosChange 
+  onExerciciosChange,
+  initialExercicios
 }: SessaoExerciciosBuilderProps) {
   const [showExerciciosSelector, setShowExerciciosSelector] = useState(false);
   const [selectedExercicioForSeries, setSelectedExercicioForSeries] = useState<string | null>(null);
@@ -40,7 +42,7 @@ export function SessaoExerciciosBuilder({
     isAddingExercicio,
     isUpdatingExercicio,
     isRemovingExercicio
-  } = useSessoesExercicios(sessaoId);
+  } = useSessoesExercicios(sessaoId, initialExercicios);
 
   const { exercicios } = useExercicios();
 

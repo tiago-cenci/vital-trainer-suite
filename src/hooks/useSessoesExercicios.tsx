@@ -20,7 +20,7 @@ export interface SessaoExercicioCompleto extends SessaoExercicio {
   series: Serie[];
 }
 
-export function useSessoesExercicios(sessaoId: string) {
+export function useSessoesExercicios(sessaoId: string, initialData?: SessaoExercicioCompleto[]) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
@@ -47,6 +47,9 @@ export function useSessoesExercicios(sessaoId: string) {
 
       return data || [];
     },
+    initialData: initialData,
+    placeholderData: initialData,
+    staleTime: 60000,
     enabled: !!user && !!sessaoId,
   });
 
