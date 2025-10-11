@@ -40,3 +40,21 @@
 .read-the-docs {
   color: #888;
 }
+
+@layer utilities {
+  /* ---- Tokens da Sidebar como utilitários ---- */
+  .bg-sidebar { background-color: hsl(var(--sidebar-background)); }
+  .text-sidebar { color: hsl(var(--sidebar-foreground)); }
+  .text-sidebar-muted { color: hsl(var(--sidebar-foreground) / 0.7); }
+  .bg-sidebar-accent { background-color: hsl(var(--sidebar-accent)); }
+  .bg-sidebar-accent-50 { background-color: hsl(var(--sidebar-accent) / 0.5); }
+  .border-sidebar { border-color: hsl(var(--sidebar-border)); }
+
+  /* ---- Gradientes utilitários (para usar em className) ---- */
+  .bg-gradient-primary { background: var(--gradient-primary); }
+  .bg-gradient-secondary { background: var(--gradient-secondary); }
+
+  /* ---- Logo wordmark e contenção ---- */
+  .logo-wrap { height: 80px; }
+  .logo-img { height: 40px; width: auto; object-fit: contain; }
+}

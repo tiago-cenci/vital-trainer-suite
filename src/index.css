@@ -13,44 +13,40 @@
     --card-foreground: 0 0% 16%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 16%;
-    
+
     /* Primary: Vinho escuro #4B1E1E */
     --primary: 0 45% 21%;
     --primary-foreground: 0 0% 100%;
     --primary-glow: 0 38% 30%;       /* #6A2D2D - Estado ativo */
     --primary-dark: 0 45% 15%;
-    
+
     /* Secondary: Bege quente #EADBC8 */
     --secondary: 33 47% 85%;
     --secondary-foreground: 0 0% 16%;
     --secondary-light: 33 47% 92%;
-    
+
     /* Accent: Vermelho translúcido #C94F4F */
     --accent: 0 51% 55%;
     --accent-foreground: 0 0% 100%;
     --accent-light: 0 51% 65%;
-    
+
     /* Neutral: Bordas e divisores #D8D2C9 */
     --muted: 33 15% 95%;
     --muted-foreground: 0 0% 42%;    /* #6B6B6B */
-    
-    /* Success: Verde oliva */
+
+    /* Success / Warning / Destructive */
     --success: 98 24% 52%;
     --success-foreground: 0 0% 100%;
-    
-    /* Warning */
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
-    
-    /* Destructive: Vermelho queimado */
     --destructive: 0 47% 49%;
     --destructive-foreground: 0 0% 100%;
-    
+
     --border: 33 15% 85%;            /* #D8D2C9 */
     --input: 33 15% 85%;
     --ring: 0 45% 21%;
     --radius: 0.625rem;              /* 10px */
-    
+
     /* Sidebar Premium - Vinho escuro */
     --sidebar-background: 0 45% 21%; /* #4B1E1E */
     --sidebar-foreground: 33 47% 85%; /* #EADBC8 */
@@ -60,13 +56,12 @@
     --sidebar-accent-foreground: 33 47% 85%;
     --sidebar-border: 0 51% 55%;     /* #C94F4F - borda ativa */
     --sidebar-ring: 0 51% 55%;
-    
+
     /* Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(0 45% 21%), hsl(0 51% 55%));
     --gradient-secondary: linear-gradient(135deg, hsl(33 47% 85%), hsl(33 47% 92%));
-    --gradient-wellness: linear-gradient(135deg, hsl(98 24% 52%), hsl(98 24% 42%));
-    
-    /* Shadows - Premium & Elegant */
+
+    /* Shadows */
     --shadow-primary: 0 10px 30px -10px hsl(0 45% 21% / 0.25);
     --shadow-card: 0 2px 12px hsl(0 0% 0% / 0.06);
     --shadow-glow: 0 0 30px hsl(0 51% 55% / 0.25);
@@ -74,43 +69,40 @@
   }
 
   .dark {
-    /* MUVTRAINER Colors - Dark Mode */
     --background: 0 0% 17%;
     --foreground: 33 47% 85%;
     --card: 0 0% 20%;
     --card-foreground: 33 47% 85%;
     --popover: 0 0% 20%;
     --popover-foreground: 33 47% 85%;
-    
+
     --primary: 0 51% 55%;
     --primary-foreground: 0 0% 100%;
     --primary-glow: 0 51% 65%;
     --primary-dark: 0 45% 21%;
-    
+
     --secondary: 0 0% 25%;
     --secondary-foreground: 33 47% 85%;
     --secondary-light: 0 0% 30%;
-    
+
     --accent: 0 51% 55%;
     --accent-foreground: 0 0% 100%;
     --accent-light: 0 51% 65%;
-    
+
     --muted: 0 0% 25%;
     --muted-foreground: 0 0% 65%;
-    
+
     --success: 98 24% 52%;
     --success-foreground: 0 0% 100%;
-    
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
-    
     --destructive: 0 47% 49%;
     --destructive-foreground: 0 0% 100%;
-    
+
     --border: 0 0% 30%;
     --input: 0 0% 30%;
     --ring: 0 51% 55%;
-    
+
     --sidebar-background: 0 0% 20%;
     --sidebar-foreground: 33 47% 85%;
     --sidebar-primary: 0 51% 55%;
@@ -120,12 +112,13 @@
     --sidebar-border: 0 0% 30%;
     --sidebar-ring: 0 51% 55%;
   }
+
+  /* preencher viewport e evitar “vazamento” */
+  html, body, #root { height: 100%; }
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
+  * { @apply border-border; }
 
   body {
     @apply bg-background text-foreground font-sans;
@@ -134,56 +127,42 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  html {
-    scroll-behavior: smooth;
-  }
+  html { scroll-behavior: smooth; }
 }
 
 @layer components {
-  /* MUVTRAINER Premium Components */
-  .fitness-gradient {
-    background: var(--gradient-primary);
-  }
-  
-  .wellness-gradient {
-    background: var(--gradient-secondary);
-  }
-  
+  .fitness-gradient { background: var(--gradient-primary); }
+  .wellness-gradient { background: var(--gradient-secondary); }
+
   .dashboard-card {
     @apply bg-card border border-border rounded-xl transition-all duration-300;
     box-shadow: var(--shadow-card);
   }
-  
   .dashboard-card:hover {
     box-shadow: var(--shadow-primary);
     transform: translateY(-2px);
   }
-  
-  .stat-number {
-    @apply text-3xl font-bold font-display text-primary;
-  }
-  
+
+  .stat-number { @apply text-3xl font-bold font-display text-primary; }
+
   .fitness-button {
     @apply relative overflow-hidden rounded-xl font-semibold transition-all duration-300;
     background: var(--gradient-primary);
   }
-  
   .fitness-button:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-glow);
   }
-  
+
   /* Sidebar Premium Styles */
   .sidebar-item {
     @apply flex items-center gap-3 px-6 py-3 text-sm font-medium transition-all duration-200;
     color: hsl(var(--sidebar-foreground) / 0.8);
   }
-  
   .sidebar-item:hover {
     background: hsl(var(--sidebar-accent) / 0.5);
     color: hsl(var(--sidebar-foreground));
   }
-  
   .sidebar-item-active {
     @apply sidebar-item;
     background: hsl(var(--sidebar-accent));
@@ -194,23 +173,26 @@
 }
 
 @layer utilities {
-  .animate-gradient {
-    background-size: 200% 200%;
-    animation: gradient 3s ease infinite;
-  }
-  
-  @keyframes gradient {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-  }
-  
-  .animate-pulse-soft {
-    animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  }
-  
-  @keyframes pulse-soft {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.8; }
-  }
+  /* tokens sidebar como util classes */
+  .bg-sidebar { background-color: hsl(var(--sidebar-background)); }
+  .text-sidebar { color: hsl(var(--sidebar-foreground)); }
+  .text-sidebar-muted { color: hsl(var(--sidebar-foreground) / 0.7); }
+  .bg-sidebar-accent { background-color: hsl(var(--sidebar-accent)); }
+  .bg-sidebar-accent-50 { background-color: hsl(var(--sidebar-accent) / 0.5); }
+  .border-sidebar { border-color: hsl(var(--sidebar-border)); }
+
+  /* gradientes util */
+  .bg-gradient-primary { background: var(--gradient-primary); }
+  .bg-gradient-secondary { background: var(--gradient-secondary); }
+
+  /* esconder qualquer scroll interno (para SidebarContent da lib) */
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+
+  /* contenção logo */
+  .logo-wrap { height: 80px; }
+  .logo-img { height: 40px; width: auto; object-fit: contain; }
+
+  /* layout grid sem vazamento */
+  .layout-grid { display: grid; grid-template-columns: auto 1fr; min-height: 100svh; }
 }

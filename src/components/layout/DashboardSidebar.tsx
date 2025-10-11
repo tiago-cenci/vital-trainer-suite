@@ -1,17 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
-  Users,
-  Dumbbell,
-  ClipboardList,
-  BarChart3,
-  Target,
-  LogOut,
-  SearchCheck,
-  BicepsFlexed,
-  Settings2
+  Users, Dumbbell, ClipboardList, BarChart3, Target, LogOut,
+  SearchCheck, BicepsFlexed, Settings2
 } from 'lucide-react';
-import muvtrainerLogo from '@/assets/muvtrainer-logo.png';
+import wordmarkLogo from '@/assets/muvtrainer-logo.svg';
+import iconLogo from '@/assets/icon-logo.svg';
+
 import {
   Sidebar,
   SidebarContent,
@@ -33,8 +28,8 @@ const menuItems = [
   { title: 'Alunos', url: '/alunos', icon: Users },
   { title: 'Exercícios', url: '/exercicios', icon: Dumbbell },
   { title: 'Alongamentos/Mobilidades', url: '/alongamentos', icon: BicepsFlexed },
-  { title: 'Treinos', url: '/treinos', icon: ClipboardList }, 
-  { title: 'Correções', url: '/correcoes', icon: SearchCheck }
+  { title: 'Treinos', url: '/treinos', icon: ClipboardList },
+  { title: 'Correções', url: '/correcoes', icon: SearchCheck },
 ];
 
 const configItems = [
@@ -44,69 +39,78 @@ const configItems = [
 
 export function DashboardSidebar() {
   const { state } = useSidebar();
+  const collapsed = state === 'collapsed';
   const location = useLocation();
   const { signOut } = useAuth();
-  const currentPath = location.pathname;
-  const collapsed = state === 'collapsed';
+  const isActive = (p: string) => location.pathname === p;
 
-  const isActive = (path: string) => currentPath === path;
+  // Fallback de logo se asset falhar
+  const [wordmarkOk, setWordmarkOk] = useState(true);
+  const [iconOk, setIconOk] = useState(true);
+
+  const itemBase =
+    'transition-all duration-200 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--sidebar-ring))]';
+  const iconCls = 'h-[18px] w-[18px] shrink-0';
+  const navItemCls = (active: boolean) =>
+    [
+      active ? 'sidebar-item-active' : 'sidebar-item',
+      collapsed ? 'justify-center px-2 py-3' : 'justify-start px-3 py-3',
+      itemBase,
+    ].join(' ');
 
   return (
     <Sidebar
-      className={collapsed ? "w-16 transition-all duration-300" : "w-72 transition-all duration-300"}
       collapsible="icon"
-      style={{ 
-        backgroundColor: 'hsl(var(--sidebar-background))',
-        borderRight: 'none'
-      }}
+      className="shrink-0 bg-sidebar text-sidebar border-r border-sidebar/20 sticky top-0 h-screen z-30 overflow-hidden"
     >
-      {/* Header com Logo */}
-      <SidebarHeader className="border-b border-sidebar-accent/30 h-20">
-        <div className="flex items-center justify-center h-full px-6 py-5">
-          {!collapsed ? (
-            <div className="flex flex-col items-center gap-1 w-full">
-              <img 
-                src={muvtrainerLogo} 
-                alt="MUVTRAINER" 
-                className="h-10 w-auto object-contain brightness-0 invert opacity-90"
-              />
-              <p className="text-xs text-sidebar-foreground/70 font-light italic tracking-wide">
-                Ciência aplicada
-              </p>
-            </div>
-          ) : (
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-sidebar-accent/50">
-              <svg className="w-5 h-5 text-sidebar-foreground" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M13 8h5v5h-5V8z" />
-              </svg>
-            </div>
-          )}
-        </div>
-      </SidebarHeader>
+      {/* HEADER */}
+<SidebarHeader
+  className={
+    (collapsed ? 'h-16' : 'h-28') +
+    ' bg-sidebar border-b border-sidebar/30 flex items-center justify-center px-4'
+  }
+>
+  {/* Logo aberta (wordmark) — fica montada sempre, só escondida quando colapsado */}
+  <div className={collapsed ? 'hidden' : 'flex flex-col items-center gap-1'}>
+    <img
+      src={wordmarkLogo}
+      alt="MUVTRAINER"
+      className="h-14 w-auto object-contain"
+      /* se o arquivo for escuro, ative: className += ' brightness-0 invert' */
+    />
+    <p className="text-[11px] leading-none text-sidebar/70 italic tracking-wide">
+      Ciência aplicada
+    </p>
+  </div>
 
-      <SidebarContent className="px-3 py-6">
+  {/* Logo colapsada (ícone) — montada sempre, visível só quando colapsado */}
+  <div className={collapsed ? 'flex items-center justify-center' : 'hidden'}>
+    <img
+      src={iconLogo}
+      alt="MUVTRAINER"
+      className="h-9 w-9 object-contain"
+      /* se o ícone for escuro: 'brightness-0 invert' */
+    />
+  </div>
+</SidebarHeader>
+
+
+      {/* MENU */}
+      <SidebarContent className="px-3 py-6 bg-sidebar overflow-visible">
         {/* Menu Principal */}
-        <SidebarGroup className="mb-8">
-          <SidebarGroupLabel className="px-3 mb-3 text-xs uppercase tracking-wider text-sidebar-foreground/50 font-semibold">
+        <SidebarGroup>
+          <SidebarGroupLabel className={collapsed ? 'sr-only' : 'px-2 mb-3 text-xs uppercase tracking-wider font-semibold text-[hsl(var(--secondary))]'}>
             Menu Principal
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-1">
+            <SidebarMenu className={collapsed ? 'space-y-1 items-center' : 'space-y-1'}>
               {menuItems.map((item) => {
                 const active = isActive(item.url);
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
-                      <NavLink 
-                        to={item.url} 
-                        end
-                        className={
-                          active
-                            ? "sidebar-item-active"
-                            : "sidebar-item"
-                        }
-                      >
-                        <item.icon className="h-[18px] w-[18px]" strokeWidth={1.5} />
+                      <NavLink to={item.url} end title={collapsed ? item.title : undefined} className={navItemCls(active)}>
+                        <item.icon className={iconCls} strokeWidth={1.6} />
                         {!collapsed && <span className="font-medium text-sm">{item.title}</span>}
                       </NavLink>
                     </SidebarMenuButton>
@@ -119,26 +123,18 @@ export function DashboardSidebar() {
 
         {/* Configurações */}
         <SidebarGroup>
-          <SidebarGroupLabel className="px-3 mb-3 text-xs uppercase tracking-wider text-sidebar-foreground/50 font-semibold">
+          <SidebarGroupLabel className={collapsed ? 'sr-only' : 'px-2 mb-3 text-xs uppercase tracking-wider font-semibold text-[hsl(var(--secondary))]'}>
             Configurações
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-1">
+            <SidebarMenu className={collapsed ? 'space-y-1 items-center' : 'space-y-1'}>
               {configItems.map((item) => {
                 const active = isActive(item.url);
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
-                      <NavLink 
-                        to={item.url} 
-                        end
-                        className={
-                          active
-                            ? "sidebar-item-active"
-                            : "sidebar-item"
-                        }
-                      >
-                        <item.icon className="h-[18px] w-[18px]" strokeWidth={1.5} />
+                      <NavLink to={item.url} end title={collapsed ? item.title : undefined} className={navItemCls(active)}>
+                        <item.icon className={iconCls} strokeWidth={1.6} />
                         {!collapsed && <span className="font-medium text-sm">{item.title}</span>}
                       </NavLink>
                     </SidebarMenuButton>
@@ -150,15 +146,16 @@ export function DashboardSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      {/* Footer - Sair */}
-      <SidebarFooter className="border-t border-sidebar-accent/30 p-3">
+      {/* FOOTER */}
+      <SidebarFooter className="border-t border-sidebar/30 p-3 bg-sidebar">
         <Button
           variant="ghost"
-          size={collapsed ? "icon" : "default"}
+          size={collapsed ? 'icon' : 'default'}
           onClick={signOut}
-          className="w-full justify-start text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-all duration-200 font-medium"
+          className={(collapsed ? 'w-10 h-10 mx-auto' : 'w-full justify-start') + ' text-sidebar hover:bg-[hsl(var(--sidebar-accent)/0.5)] hover:text-sidebar transition-all duration-200 font-medium'}
+          title={collapsed ? 'Sair' : undefined}
         >
-          <LogOut className="h-[18px] w-[18px]" strokeWidth={1.5} />
+          <LogOut className={iconCls} strokeWidth={1.6} />
           {!collapsed && <span className="ml-3 text-sm">Sair</span>}
         </Button>
       </SidebarFooter>
