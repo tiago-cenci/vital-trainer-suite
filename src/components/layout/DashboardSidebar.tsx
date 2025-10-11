@@ -4,14 +4,14 @@ import {
   Users,
   Dumbbell,
   ClipboardList,
-  Calendar,
-  Settings,
   BarChart3,
   Target,
   LogOut,
   SearchCheck,
-  BicepsFlexed
+  BicepsFlexed,
+  Settings2
 } from 'lucide-react';
+import muvtrainerLogo from '@/assets/muvtrainer-logo.png';
 import {
   Sidebar,
   SidebarContent,
@@ -39,7 +39,7 @@ const menuItems = [
 
 const configItems = [
   { title: 'Periodizações', url: '/periodizacoes', icon: Target },
-  { title: 'Tipos de Microciclos', url: '/tipos-microciclos', icon: Settings },
+  { title: 'Tipos de Microciclos', url: '/tipos-microciclos', icon: Settings2 },
 ];
 
 export function DashboardSidebar() {
@@ -50,83 +50,117 @@ export function DashboardSidebar() {
   const collapsed = state === 'collapsed';
 
   const isActive = (path: string) => currentPath === path;
-  const getNavCls = ({ isActive }: { isActive: boolean }) =>
-    isActive
-      ? "bg-sidebar-accent text-sidebar-primary-foreground font-medium"
-      : "hover:bg-sidebar-accent/50 text-sidebar-foreground";
 
   return (
     <Sidebar
-      className={collapsed ? "w-14" : "w-64"}
+      className={collapsed ? "w-16 transition-all duration-300" : "w-72 transition-all duration-300"}
       collapsible="icon"
+      style={{ 
+        backgroundColor: 'hsl(var(--sidebar-background))',
+        borderRight: 'none'
+      }}
     >
-      <SidebarHeader className="border-b border-sidebar-border">
-        <div className="flex items-center gap-3 px-4 py-4">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
-            <svg className="w-5 h-5 text-primary-foreground" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M7 2v7H2V2h5zm0 13v7H2v-7h5zM21 2v7h-5V2h5zm0 13v7h-5v-7h5zM9 2h6v7H9V2zm0 13h6v7H9v-7z" opacity="0.6"/>
-              <path d="M13 8h5v5h-5V8z" />
-            </svg>
-          </div>
-          {!collapsed && (
-            <div>
-              <h1 className="font-display font-bold text-sidebar-foreground tracking-tight">MUVTRAINER</h1>
-              <p className="text-xs text-sidebar-foreground/70">Ciência aplicada</p>
+      {/* Header com Logo */}
+      <SidebarHeader className="border-b border-sidebar-accent/30 h-20">
+        <div className="flex items-center justify-center h-full px-6 py-5">
+          {!collapsed ? (
+            <div className="flex flex-col items-center gap-1 w-full">
+              <img 
+                src={muvtrainerLogo} 
+                alt="MUVTRAINER" 
+                className="h-10 w-auto object-contain brightness-0 invert opacity-90"
+              />
+              <p className="text-xs text-sidebar-foreground/70 font-light italic tracking-wide">
+                Ciência aplicada
+              </p>
+            </div>
+          ) : (
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-sidebar-accent/50">
+              <svg className="w-5 h-5 text-sidebar-foreground" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M13 8h5v5h-5V8z" />
+              </svg>
             </div>
           )}
         </div>
       </SidebarHeader>
 
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Menu Principal</SidebarGroupLabel>
+      <SidebarContent className="px-3 py-6">
+        {/* Menu Principal */}
+        <SidebarGroup className="mb-8">
+          <SidebarGroupLabel className="px-3 mb-3 text-xs uppercase tracking-wider text-sidebar-foreground/50 font-semibold">
+            Menu Principal
+          </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink to={item.url} end className={getNavCls}>
-                      <item.icon className="h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+            <SidebarMenu className="space-y-1">
+              {menuItems.map((item) => {
+                const active = isActive(item.url);
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <NavLink 
+                        to={item.url} 
+                        end
+                        className={
+                          active
+                            ? "sidebar-item-active"
+                            : "sidebar-item"
+                        }
+                      >
+                        <item.icon className="h-[18px] w-[18px]" strokeWidth={1.5} />
+                        {!collapsed && <span className="font-medium text-sm">{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
+        {/* Configurações */}
         <SidebarGroup>
-          <SidebarGroupLabel>Configurações</SidebarGroupLabel>
+          <SidebarGroupLabel className="px-3 mb-3 text-xs uppercase tracking-wider text-sidebar-foreground/50 font-semibold">
+            Configurações
+          </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {configItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink to={item.url} end className={getNavCls}>
-                      <item.icon className="h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+            <SidebarMenu className="space-y-1">
+              {configItems.map((item) => {
+                const active = isActive(item.url);
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild>
+                      <NavLink 
+                        to={item.url} 
+                        end
+                        className={
+                          active
+                            ? "sidebar-item-active"
+                            : "sidebar-item"
+                        }
+                      >
+                        <item.icon className="h-[18px] w-[18px]" strokeWidth={1.5} />
+                        {!collapsed && <span className="font-medium text-sm">{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border">
-        <div className="p-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={signOut}
-            className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent/50"
-          >
-            <LogOut className="h-4 w-4" />
-            {!collapsed && <span className="ml-2">Sair</span>}
-          </Button>
-        </div>
+      {/* Footer - Sair */}
+      <SidebarFooter className="border-t border-sidebar-accent/30 p-3">
+        <Button
+          variant="ghost"
+          size={collapsed ? "icon" : "default"}
+          onClick={signOut}
+          className="w-full justify-start text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-all duration-200 font-medium"
+        >
+          <LogOut className="h-[18px] w-[18px]" strokeWidth={1.5} />
+          {!collapsed && <span className="ml-3 text-sm">Sair</span>}
+        </Button>
       </SidebarFooter>
     </Sidebar>
   );

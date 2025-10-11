@@ -6,33 +6,33 @@
 
 @layer base {
   :root {
-    /* MUVTRAINER Colors - Light Mode */
-    --background: 30 17% 97%;
-    --foreground: 0 0% 16%;
+    /* MUVTRAINER Design System - Premium Scientific Fitness */
+    --background: 33 15% 97%;        /* #F8F7F5 */
+    --foreground: 0 0% 16%;          /* #2A2A2A */
     --card: 0 0% 100%;
     --card-foreground: 0 0% 16%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 16%;
     
-    /* Primary: Vinho escuro */
+    /* Primary: Vinho escuro #4B1E1E */
     --primary: 0 45% 21%;
-    --primary-foreground: 33 47% 85%;
-    --primary-glow: 0 45% 28%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 0 38% 30%;       /* #6A2D2D - Estado ativo */
     --primary-dark: 0 45% 15%;
     
-    /* Secondary: Bege quente */
+    /* Secondary: Bege quente #EADBC8 */
     --secondary: 33 47% 85%;
     --secondary-foreground: 0 0% 16%;
     --secondary-light: 33 47% 92%;
     
-    /* Accent: Vermelho translúcido */
+    /* Accent: Vermelho translúcido #C94F4F */
     --accent: 0 51% 55%;
     --accent-foreground: 0 0% 100%;
     --accent-light: 0 51% 65%;
     
-    /* Neutral: Cinza carvão */
-    --muted: 0 0% 95%;
-    --muted-foreground: 0 0% 45%;
+    /* Neutral: Bordas e divisores #D8D2C9 */
+    --muted: 33 15% 95%;
+    --muted-foreground: 0 0% 42%;    /* #6B6B6B */
     
     /* Success: Verde oliva */
     --success: 98 24% 52%;
@@ -46,30 +46,31 @@
     --destructive: 0 47% 49%;
     --destructive-foreground: 0 0% 100%;
     
-    --border: 0 0% 90%;
-    --input: 0 0% 90%;
+    --border: 33 15% 85%;            /* #D8D2C9 */
+    --input: 33 15% 85%;
     --ring: 0 45% 21%;
-    --radius: 0.5rem;
+    --radius: 0.625rem;              /* 10px */
     
-    /* Sidebar */
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 0 0% 16%;
+    /* Sidebar Premium - Vinho escuro */
+    --sidebar-background: 0 45% 21%; /* #4B1E1E */
+    --sidebar-foreground: 33 47% 85%; /* #EADBC8 */
     --sidebar-primary: 0 45% 21%;
-    --sidebar-primary-foreground: 33 47% 85%;
-    --sidebar-accent: 33 47% 95%;
-    --sidebar-accent-foreground: 0 0% 16%;
-    --sidebar-border: 0 0% 90%;
-    --sidebar-ring: 0 45% 21%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 38% 30%;     /* #6A2D2D - hover/ativo */
+    --sidebar-accent-foreground: 33 47% 85%;
+    --sidebar-border: 0 51% 55%;     /* #C94F4F - borda ativa */
+    --sidebar-ring: 0 51% 55%;
     
     /* Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(0 45% 21%), hsl(0 51% 55%));
     --gradient-secondary: linear-gradient(135deg, hsl(33 47% 85%), hsl(33 47% 92%));
     --gradient-wellness: linear-gradient(135deg, hsl(98 24% 52%), hsl(98 24% 42%));
     
-    /* Shadows */
-    --shadow-primary: 0 10px 30px -10px hsl(0 45% 21% / 0.3);
-    --shadow-card: 0 2px 8px hsl(0 0% 0% / 0.08);
-    --shadow-glow: 0 0 40px hsl(0 51% 55% / 0.3);
+    /* Shadows - Premium & Elegant */
+    --shadow-primary: 0 10px 30px -10px hsl(0 45% 21% / 0.25);
+    --shadow-card: 0 2px 12px hsl(0 0% 0% / 0.06);
+    --shadow-glow: 0 0 30px hsl(0 51% 55% / 0.25);
+    --shadow-soft: 0 1px 3px hsl(0 0% 0% / 0.08);
   }
 
   .dark {
@@ -128,7 +129,9 @@
 
   body {
     @apply bg-background text-foreground font-sans;
-    font-family: 'Nunito Sans', 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'Inter', 'Nunito Sans', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   html {
@@ -137,7 +140,7 @@
 }
 
 @layer components {
-  /* MUVTRAINER dashboard components */
+  /* MUVTRAINER Premium Components */
   .fitness-gradient {
     background: var(--gradient-primary);
   }
@@ -147,26 +150,46 @@
   }
   
   .dashboard-card {
-    @apply bg-card border border-border rounded-xl shadow-sm hover:shadow-md transition-all duration-300;
+    @apply bg-card border border-border rounded-xl transition-all duration-300;
     box-shadow: var(--shadow-card);
   }
   
   .dashboard-card:hover {
     box-shadow: var(--shadow-primary);
+    transform: translateY(-2px);
   }
   
   .stat-number {
-    @apply text-3xl font-bold font-display bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent;
+    @apply text-3xl font-bold font-display text-primary;
   }
   
   .fitness-button {
-    @apply relative overflow-hidden rounded-xl font-medium transition-all duration-300;
+    @apply relative overflow-hidden rounded-xl font-semibold transition-all duration-300;
     background: var(--gradient-primary);
   }
   
   .fitness-button:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-glow);
+  }
+  
+  /* Sidebar Premium Styles */
+  .sidebar-item {
+    @apply flex items-center gap-3 px-6 py-3 text-sm font-medium transition-all duration-200;
+    color: hsl(var(--sidebar-foreground) / 0.8);
+  }
+  
+  .sidebar-item:hover {
+    background: hsl(var(--sidebar-accent) / 0.5);
+    color: hsl(var(--sidebar-foreground));
+  }
+  
+  .sidebar-item-active {
+    @apply sidebar-item;
+    background: hsl(var(--sidebar-accent));
+    color: hsl(var(--sidebar-foreground));
+    border-left: 3px solid hsl(var(--sidebar-border));
+    padding-left: calc(1.5rem - 3px);
   }
 }
 

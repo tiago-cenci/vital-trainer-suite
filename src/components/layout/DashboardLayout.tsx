@@ -17,10 +17,10 @@ export function DashboardLayout({ children, breadcrumbs = [] }: DashboardLayoutP
         
         <div className="flex-1 flex flex-col">
           {/* Header */}
-          <header className="h-16 border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40">
-            <div className="flex items-center justify-between h-full px-6">
+          <header className="h-16 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 sticky top-0 z-40">
+            <div className="flex items-center justify-between h-full px-8">
               <div className="flex items-center gap-4">
-                <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
+                <SidebarTrigger className="text-muted-foreground hover:text-foreground transition-colors" />
                 
                 {breadcrumbs.length > 0 && (
                   <Breadcrumb>
@@ -29,9 +29,11 @@ export function DashboardLayout({ children, breadcrumbs = [] }: DashboardLayoutP
                         <React.Fragment key={index}>
                           <BreadcrumbItem>
                             {crumb.href ? (
-                              <BreadcrumbLink href={crumb.href}>{crumb.label}</BreadcrumbLink>
+                              <BreadcrumbLink href={crumb.href} className="text-muted-foreground hover:text-foreground transition-colors">
+                                {crumb.label}
+                              </BreadcrumbLink>
                             ) : (
-                              <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
+                              <BreadcrumbPage className="text-foreground font-medium">{crumb.label}</BreadcrumbPage>
                             )}
                           </BreadcrumbItem>
                           {index < breadcrumbs.length - 1 && <BreadcrumbSeparator />}
@@ -49,7 +51,7 @@ export function DashboardLayout({ children, breadcrumbs = [] }: DashboardLayoutP
           </header>
 
           {/* Main Content */}
-          <main className="flex-1 p-6">
+          <main className="flex-1 p-8 bg-background">
             {children}
           </main>
         </div>

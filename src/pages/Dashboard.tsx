@@ -126,9 +126,9 @@ export default function Dashboard() {
     <DashboardLayout breadcrumbs={[{ label: 'Dashboard' }]}>
       <div className="space-y-8">
         {/* Welcome */}
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground font-display">Dashboard</h1>
-          <p className="text-muted-foreground">Gerencie sua plataforma de forma científica e profissional</p>
+        <div className="space-y-2 mb-8">
+          <h1 className="text-4xl font-bold font-display tracking-tight text-primary">Dashboard</h1>
+          <p className="text-muted-foreground text-lg">Gerencie sua plataforma de forma científica e profissional</p>
         </div>
 
         {/* Storage / Drive */}
@@ -159,22 +159,24 @@ export default function Dashboard() {
         </Card>
 
         {/* Stats */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
           {statCards.map((stat, index) => (
             <Card
               key={index}
-              className="dashboard-card cursor-pointer transition-all hover:scale-105"
+              className="dashboard-card cursor-pointer group"
               onClick={stat.action}
             >
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
-                <div className={`p-2 rounded-lg ${stat.gradient}`}>
-                  <stat.icon className="h-4 w-4 text-white" />
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+                <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                  {stat.title}
+                </CardTitle>
+                <div className={`p-3 rounded-xl ${stat.gradient} shadow-sm group-hover:shadow-glow transition-all duration-300`}>
+                  <stat.icon className="h-5 w-5 text-white" strokeWidth={2} />
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="stat-number">{loading ? '...' : stat.value}</div>
-                <p className="text-xs text-muted-foreground">{stat.description}</p>
+                <div className="stat-number mb-1">{loading ? '...' : stat.value}</div>
+                <p className="text-sm text-muted-foreground">{stat.description}</p>
               </CardContent>
             </Card>
           ))}
@@ -184,23 +186,23 @@ export default function Dashboard() {
         <div className="grid gap-6 md:grid-cols-2">
           <Card className="dashboard-card">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-primary font-display">
                 <Plus className="h-5 w-5" />
                 Ações Rápidas
               </CardTitle>
               <CardDescription>Acesse as principais funcionalidades</CardDescription>
             </CardHeader>
-            <CardContent className="grid gap-3">
+            <CardContent className="grid gap-2">
               {quickActions.map((action, index) => (
                 <Button
                   key={index}
                   variant="ghost"
-                  className="justify-start h-auto p-4 hover:bg-muted/50"
+                  className="justify-start h-auto p-4 hover:bg-muted/80 rounded-lg transition-all duration-200 group"
                   onClick={action.action}
                 >
-                  <action.icon className="h-5 w-5 mr-3 text-primary" />
+                  <action.icon className="h-5 w-5 mr-3 text-primary group-hover:text-accent transition-colors" strokeWidth={1.5} />
                   <div className="text-left">
-                    <p className="font-medium">{action.title}</p>
+                    <p className="font-semibold text-foreground">{action.title}</p>
                     <p className="text-sm text-muted-foreground">{action.description}</p>
                   </div>
                 </Button>
@@ -210,16 +212,16 @@ export default function Dashboard() {
 
           <Card className="dashboard-card">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-primary font-display">
                 <Calendar className="h-5 w-5" />
                 Próximas Sessões
               </CardTitle>
               <CardDescription>Suas próximas atividades</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Nenhuma sessão agendada</p>
+              <div className="text-center py-12 text-muted-foreground">
+                <Calendar className="h-16 w-16 mx-auto mb-4 opacity-30" strokeWidth={1.5} />
+                <p className="font-medium mb-1">Nenhuma sessão agendada</p>
                 <p className="text-sm">Comece criando treinos para seus alunos</p>
               </div>
             </CardContent>
