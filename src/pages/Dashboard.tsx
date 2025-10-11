@@ -127,8 +127,8 @@ export default function Dashboard() {
       <div className="space-y-8">
         {/* Welcome */}
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground">Visão geral da sua plataforma de personal training</p>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground font-display">Dashboard</h1>
+          <p className="text-muted-foreground">Gerencie sua plataforma de forma científica e profissional</p>
         </div>
 
         {/* Storage / Drive */}

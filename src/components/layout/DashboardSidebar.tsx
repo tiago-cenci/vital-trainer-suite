@@ -61,16 +61,17 @@ export function DashboardSidebar() {
       collapsible="icon"
     >
       <SidebarHeader className="border-b border-sidebar-border">
-        <div className="flex items-center gap-3 px-4 py-3">
-          <div className="w-8 h-8 bg-sidebar-primary rounded-lg flex items-center justify-center">
-            <svg className="w-5 h-5 text-sidebar-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+        <div className="flex items-center gap-3 px-4 py-4">
+          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
+            <svg className="w-5 h-5 text-primary-foreground" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M7 2v7H2V2h5zm0 13v7H2v-7h5zM21 2v7h-5V2h5zm0 13v7h-5v-7h5zM9 2h6v7H9V2zm0 13h6v7H9v-7z" opacity="0.6"/>
+              <path d="M13 8h5v5h-5V8z" />
             </svg>
           </div>
           {!collapsed && (
             <div>
-              <h1 className="font-bold text-sidebar-foreground">VitalTrainer</h1>
-              <p className="text-xs text-sidebar-foreground/70">Personal Training</p>
+              <h1 className="font-display font-bold text-sidebar-foreground tracking-tight">MUVTRAINER</h1>
+              <p className="text-xs text-sidebar-foreground/70">Ciência aplicada</p>
             </div>
           )}
         </div>

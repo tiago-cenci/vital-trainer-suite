@@ -36,7 +36,7 @@ export default function Login() {
 
       toast({
         title: "Login realizado com sucesso!",
-        description: "Bem-vindo de volta ao VitalTrainer.",
+        description: "Bem-vindo de volta ao MUVTRAINER.",
       });
 
       navigate('/dashboard');

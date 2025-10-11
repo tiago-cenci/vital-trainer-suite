@@ -1,5 +1,5 @@
 import React from 'react';
-import heroFitness from '@/assets/hero-fitness.jpg';
+import muvtrainerLogo from '@/assets/muvtrainer-logo.png';
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -11,27 +11,29 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
   return (
     <div className="min-h-screen flex">
       {/* Left side - Branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-primary items-center justify-center p-12 relative overflow-hidden">
-        <div className="absolute inset-0 bg-black/20"></div>
-        <div className="max-w-md text-center text-white relative z-10">
-          <div className="mb-8">
-            <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
+      <div className="hidden lg:flex lg:w-1/2 bg-primary items-center justify-center p-12 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary-dark to-primary opacity-95"></div>
+        <div className="max-w-lg text-center text-secondary relative z-10 space-y-8">
+          <div className="space-y-6">
+            <img 
+              src={muvtrainerLogo} 
+              alt="MUVTRAINER Logo" 
+              className="h-16 mx-auto object-contain brightness-0 invert opacity-90"
+            />
+            <div>
+              <h1 className="text-4xl font-display font-bold tracking-tight mb-3">MUVTRAINER</h1>
+              <p className="text-xl text-secondary/90 font-light">Treino guiado pela ciência</p>
             </div>
-            <h1 className="text-3xl font-bold mb-2">VitalTrainer</h1>
-            <p className="text-xl text-white/80">Potencialize seus resultados</p>
           </div>
-          <blockquote className="text-lg text-white/90 italic">
-            "A plataforma completa para personal trainers que querem elevar seus atendimentos ao próximo nível."
+          <blockquote className="text-lg text-secondary/80 leading-relaxed max-w-md mx-auto">
+            "A plataforma que une ciência, performance e personalização para elevar o trabalho dos personal trainers digitais."
           </blockquote>
+          <div className="flex items-center justify-center gap-2 text-secondary/70">
+            <div className="h-px w-12 bg-secondary/30"></div>
+            <span className="text-sm uppercase tracking-wider">Profissional • Científico • Evoluído</span>
+            <div className="h-px w-12 bg-secondary/30"></div>
+          </div>
         </div>
-        <img
-          src={heroFitness}
-          alt="Personal trainer working with client"
-          className="absolute inset-0 w-full h-full object-cover -z-10"
-        />
       </div>
 
       {/* Right side - Auth Form */}

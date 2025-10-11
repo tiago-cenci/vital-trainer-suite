@@ -1,108 +1,123 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Fitness-focused design system for Personal Trainer SaaS */
+/* MUVTRAINER Design System - Treino guiado pela ciência */
 
 @layer base {
   :root {
-    /* Primary fitness gradient system */
-    --primary: 158 64% 52%; /* Energetic teal */
-    --primary-foreground: 0 0% 98%;
-    --primary-glow: 158 84% 65%;
-    --primary-dark: 158 55% 42%;
-    
-    /* Secondary energy colors */
-    --secondary: 142 76% 36%; /* Deep green */
-    --secondary-foreground: 0 0% 98%;
-    --secondary-light: 142 65% 55%;
-    
-    /* Accent wellness colors */
-    --accent: 199 89% 48%; /* Vibrant blue */
-    --accent-foreground: 0 0% 98%;
-    --accent-light: 199 89% 65%;
-    
-    /* Success & warning fitness theme */
-    --success: 120 100% 25%; /* Vibrant green for achievements */
-    --success-foreground: 0 0% 98%;
-    --warning: 38 92% 50%; /* Energy orange */
-    --warning-foreground: 0 0% 98%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
-    
-    /* Neutral system - clean and professional */
-    --background: 210 20% 98%;
-    --foreground: 215 25% 27%;
+    /* MUVTRAINER Colors - Light Mode */
+    --background: 30 17% 97%;
+    --foreground: 0 0% 16%;
     --card: 0 0% 100%;
-    --card-foreground: 215 25% 27%;
+    --card-foreground: 0 0% 16%;
     --popover: 0 0% 100%;
-    --popover-foreground: 215 25% 27%;
+    --popover-foreground: 0 0% 16%;
     
-    /* Muted colors for secondary content */
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 158 64% 52%;
+    /* Primary: Vinho escuro */
+    --primary: 0 45% 21%;
+    --primary-foreground: 33 47% 85%;
+    --primary-glow: 0 45% 28%;
+    --primary-dark: 0 45% 15%;
     
-    /* Enhanced sidebar for fitness dashboard */
-    --sidebar-background: 215 28% 17%; /* Deep professional */
-    --sidebar-foreground: 210 20% 98%;
-    --sidebar-primary: 158 64% 52%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 215 25% 25%;
-    --sidebar-accent-foreground: 210 20% 98%;
-    --sidebar-border: 215 25% 25%;
-    --sidebar-ring: 158 64% 52%;
+    /* Secondary: Bege quente */
+    --secondary: 33 47% 85%;
+    --secondary-foreground: 0 0% 16%;
+    --secondary-light: 33 47% 92%;
     
-    /* Design system additions */
-    --radius: 0.75rem;
+    /* Accent: Vermelho translúcido */
+    --accent: 0 51% 55%;
+    --accent-foreground: 0 0% 100%;
+    --accent-light: 0 51% 65%;
     
-    /* Fitness gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(158 64% 52%), hsl(142 76% 36%));
-    --gradient-secondary: linear-gradient(135deg, hsl(199 89% 48%), hsl(158 84% 65%));
-    --gradient-wellness: linear-gradient(180deg, hsl(var(--background)), hsl(210 30% 95%));
+    /* Neutral: Cinza carvão */
+    --muted: 0 0% 95%;
+    --muted-foreground: 0 0% 45%;
     
-    /* Shadows with fitness theme */
-    --shadow-primary: 0 10px 30px -10px hsl(158 64% 52% / 0.3);
-    --shadow-card: 0 4px 20px -4px hsl(215 25% 27% / 0.1);
-    --shadow-glow: 0 0 40px hsl(158 84% 65% / 0.2);
+    /* Success: Verde oliva */
+    --success: 98 24% 52%;
+    --success-foreground: 0 0% 100%;
     
-    /* Animations */
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    /* Warning */
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    
+    /* Destructive: Vermelho queimado */
+    --destructive: 0 47% 49%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 0 45% 21%;
+    --radius: 0.5rem;
+    
+    /* Sidebar */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 0 0% 16%;
+    --sidebar-primary: 0 45% 21%;
+    --sidebar-primary-foreground: 33 47% 85%;
+    --sidebar-accent: 33 47% 95%;
+    --sidebar-accent-foreground: 0 0% 16%;
+    --sidebar-border: 0 0% 90%;
+    --sidebar-ring: 0 45% 21%;
+    
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(0 45% 21%), hsl(0 51% 55%));
+    --gradient-secondary: linear-gradient(135deg, hsl(33 47% 85%), hsl(33 47% 92%));
+    --gradient-wellness: linear-gradient(135deg, hsl(98 24% 52%), hsl(98 24% 42%));
+    
+    /* Shadows */
+    --shadow-primary: 0 10px 30px -10px hsl(0 45% 21% / 0.3);
+    --shadow-card: 0 2px 8px hsl(0 0% 0% / 0.08);
+    --shadow-glow: 0 0 40px hsl(0 51% 55% / 0.3);
   }
 
   .dark {
-    --background: 215 28% 17%;
-    --foreground: 210 20% 98%;
-    --card: 215 25% 20%;
-    --card-foreground: 210 20% 98%;
-    --popover: 215 25% 20%;
-    --popover-foreground: 210 20% 98%;
-    --primary: 158 84% 65%;
-    --primary-foreground: 215 28% 17%;
-    --secondary: 215 25% 25%;
-    --secondary-foreground: 210 20% 98%;
-    --muted: 215 25% 25%;
-    --muted-foreground: 217 20% 65%;
-    --accent: 215 25% 25%;
-    --accent-foreground: 210 20% 98%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 20% 98%;
-    --border: 215 25% 25%;
-    --input: 215 25% 25%;
-    --ring: 158 84% 65%;
-    --sidebar-background: 215 30% 12%;
-    --sidebar-foreground: 210 20% 98%;
-    --sidebar-primary: 158 84% 65%;
-    --sidebar-primary-foreground: 215 28% 17%;
-    --sidebar-accent: 215 25% 20%;
-    --sidebar-accent-foreground: 210 20% 98%;
-    --sidebar-border: 215 25% 20%;
-    --sidebar-ring: 158 84% 65%;
+    /* MUVTRAINER Colors - Dark Mode */
+    --background: 0 0% 17%;
+    --foreground: 33 47% 85%;
+    --card: 0 0% 20%;
+    --card-foreground: 33 47% 85%;
+    --popover: 0 0% 20%;
+    --popover-foreground: 33 47% 85%;
+    
+    --primary: 0 51% 55%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 0 51% 65%;
+    --primary-dark: 0 45% 21%;
+    
+    --secondary: 0 0% 25%;
+    --secondary-foreground: 33 47% 85%;
+    --secondary-light: 0 0% 30%;
+    
+    --accent: 0 51% 55%;
+    --accent-foreground: 0 0% 100%;
+    --accent-light: 0 51% 65%;
+    
+    --muted: 0 0% 25%;
+    --muted-foreground: 0 0% 65%;
+    
+    --success: 98 24% 52%;
+    --success-foreground: 0 0% 100%;
+    
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    
+    --destructive: 0 47% 49%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --border: 0 0% 30%;
+    --input: 0 0% 30%;
+    --ring: 0 51% 55%;
+    
+    --sidebar-background: 0 0% 20%;
+    --sidebar-foreground: 33 47% 85%;
+    --sidebar-primary: 0 51% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 25%;
+    --sidebar-accent-foreground: 33 47% 85%;
+    --sidebar-border: 0 0% 30%;
+    --sidebar-ring: 0 51% 55%;
   }
 }
 
@@ -113,7 +128,7 @@
 
   body {
     @apply bg-background text-foreground font-sans;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    font-family: 'Nunito Sans', 'Inter', system-ui, -apple-system, sans-serif;
   }
 
   html {
@@ -122,7 +137,7 @@
 }
 
 @layer components {
-  /* Fitness dashboard specific components */
+  /* MUVTRAINER dashboard components */
   .fitness-gradient {
     background: var(--gradient-primary);
   }
@@ -141,7 +156,7 @@
   }
   
   .stat-number {
-    @apply text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent;
+    @apply text-3xl font-bold font-display bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent;
   }
   
   .fitness-button {

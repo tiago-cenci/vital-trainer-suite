@@ -68,7 +68,7 @@ export default function Register() {
   return (
     <AuthLayout
       title="Criar conta"
-      subtitle="Comece sua jornada como personal trainer digital"
+      subtitle="Comece sua jornada científica no treinamento online"
     >
       <form onSubmit={handleRegister} className="space-y-6">
         {error && (
