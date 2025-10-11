@@ -71,8 +71,17 @@ export function TreinoForm({ treino, onSubmit, onCancel, isSubmitting }: TreinoF
 
   const { alunos } = useAlunos();
   const { periodizacoes } = usePeriodizacoes();
-  const { exercicios = [], isLoading: loadingExercicios } = useExercicios?.() ?? { exercicios: [], isLoading: false };
+  type Exercicio = Tables<'exercicios'>;
+  type UseExerciciosRet = { exercicios: Exercicio[]; isLoading: boolean };
 
+  // garante assinatura e evita optional chaining em hook
+  const getExercicios = (useExercicios as unknown as () => UseExerciciosRet);
+
+  const {
+    exercicios = [],
+    isLoading: loadingExercicios = false,
+  } = getExercicios?.() ?? { exercicios: [], isLoading: false };
+  
   const {
     register,
     handleSubmit,
