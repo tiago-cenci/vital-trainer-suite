@@ -1,5 +1,5 @@
 import React from 'react';
-import muvtrainerLogo from '@/assets/muvtrainer-logo.png';
+import muvtrainerLogo from '@/assets/muvtrainer-logo.svg';
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -18,11 +18,8 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
             <img 
               src={muvtrainerLogo} 
               alt="MUVTRAINER Logo" 
-              className="h-16 mx-auto object-contain brightness-0 invert opacity-90"
             />
             <div>
-              <h1 className="text-4xl font-display font-bold tracking-tight mb-3">MUVTRAINER</h1>
-              <p className="text-xl text-secondary/90 font-light">Treino guiado pela ciência</p>
             </div>
           </div>
           <blockquote className="text-lg text-secondary/80 leading-relaxed max-w-md mx-auto">
