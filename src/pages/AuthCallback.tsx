@@ -11,12 +11,7 @@ export default function AuthCallback() {
       return;
     }
 
-    const base = import.meta.env.VITE_SUPABASE_FUNCTIONS_URL;
-    location.replace(`${base}/gdrive_oauth_callback?code=${code}&state=${state}&debug=1`);
-
-
-    // Redireciona para a Edge Function
-    const functionsUrl = 'https://kjqoesfrehzcrtvrcktm.functions.supabase.co';
+    const functionsUrl = import.meta.env.VITE_SUPABASE_FUNCTIONS_URL;
     const url = `${functionsUrl}/gdrive_oauth_callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state)}`;
     window.location.replace(url);
   }, []);

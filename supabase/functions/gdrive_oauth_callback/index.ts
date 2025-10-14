@@ -25,7 +25,7 @@ serve(async (req) => {
         status: 302,
         headers: {
           ...corsHeaders,
-          'Location': 'https://vital-trainer-suite.lovable.app/dashboard?error=missing_code'
+          'Location': 'https://muvtrainer.lovable.app/dashboard?error=missing_code'
         }
       });
     }
@@ -60,7 +60,7 @@ serve(async (req) => {
         status: 302,
         headers: {
           ...corsHeaders,
-          'Location': 'https://vital-trainer-suite.lovable.app/dashboard?error=token_exchange_failed'
+          'Location': 'https://muvtrainer.lovable.app/dashboard?error=token_exchange_failed'
         }
       });
     }
@@ -98,7 +98,7 @@ serve(async (req) => {
         status: 302,
         headers: {
           ...corsHeaders,
-          'Location': 'https://vital-trainer-suite.lovable.app/dashboard?error=save_tokens_failed'
+          'Location': 'https://muvtrainer.lovable.app/dashboard?error=save_tokens_failed'
         }
       });
     }
@@ -113,7 +113,7 @@ serve(async (req) => {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        name: 'Vital Trainer Suite',
+        name: 'MUVTRAINER',
         mimeType: 'application/vnd.google-apps.folder'
       })
     });
@@ -147,7 +147,7 @@ serve(async (req) => {
       status: 302,
       headers: {
         ...corsHeaders,
-        'Location': 'https://vital-trainer-suite.lovable.app/dashboard?connected=1'
+        'Location': 'https://muvtrainer.lovable.app/dashboard?connected=1'
       }
     });
 
@@ -157,7 +157,7 @@ serve(async (req) => {
       status: 302,
       headers: {
         ...corsHeaders,
-        'Location': 'https://vital-trainer-suite.lovable.app/dashboard?error=general_error'
+        'Location': 'https://muvtrainer.lovable.app/dashboard?error=general_error'
       }
     });
   }

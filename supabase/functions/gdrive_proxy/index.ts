@@ -101,8 +101,100 @@ serve(async (req) => {
 
     // Executar ação solicitada
     if (action === 'upload-init') {
-      const { fileName, mimeType, folderId } = params;
+      const { fileName, mimeType, refTable, refId, alunoId } = params;
       
+      // Buscar root folder
+      const { data: settings } = await supabaseAdmin
+        .from('storage_settings')
+        .select('gdrive_root_folder_id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!settings?.gdrive_root_folder_id) {
+        return new Response(JSON.stringify({ error: 'Root folder not found' }), {
+          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+      }
+
+      const rootFolderId = settings.gdrive_root_folder_id;
+
+      // Buscar ou criar pasta do aluno
+      let alunoFolderId = rootFolderId;
+      if (alunoId) {
+        const { data: aluno } = await supabaseClient
+          .from('alunos')
+          .select('nome')
+          .eq('id', alunoId)
+          .single();
+
+        if (aluno) {
+          // Buscar pasta do aluno
+          const searchRes = await fetch(
+            `https://www.googleapis.com/drive/v3/files?q=name='${encodeURIComponent(aluno.nome)}' and '${rootFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+            { headers: { 'Authorization': `Bearer ${accessToken}` } }
+          );
+          
+          const searchData = await searchRes.json();
+          
+          if (searchData.files && searchData.files.length > 0) {
+            alunoFolderId = searchData.files[0].id;
+          } else {
+            // Criar pasta do aluno
+            const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                name: aluno.nome,
+                mimeType: 'application/vnd.google-apps.folder',
+                parents: [rootFolderId]
+              })
+            });
+            const alunoFolder = await createRes.json();
+            alunoFolderId = alunoFolder.id;
+          }
+        }
+      }
+
+      // Buscar ou criar pasta do tipo de conteúdo (correcoes, treinos, etc)
+      let contentFolderId = alunoFolderId;
+      if (refTable) {
+        const folderName = refTable === 'correcoes_midias' ? 'Correções' : 
+                          refTable === 'treinos_execucoes' ? 'Treinos' : 
+                          'Outros';
+        
+        const searchRes = await fetch(
+          `https://www.googleapis.com/drive/v3/files?q=name='${encodeURIComponent(folderName)}' and '${alunoFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+          { headers: { 'Authorization': `Bearer ${accessToken}` } }
+        );
+        
+        const searchData = await searchRes.json();
+        
+        if (searchData.files && searchData.files.length > 0) {
+          contentFolderId = searchData.files[0].id;
+        } else {
+          // Criar pasta do tipo de conteúdo
+          const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              name: folderName,
+              mimeType: 'application/vnd.google-apps.folder',
+              parents: [alunoFolderId]
+            })
+          });
+          const contentFolder = await createRes.json();
+          contentFolderId = contentFolder.id;
+        }
+      }
+
+      // Criar arquivo no Drive
       const driveResponse = await fetch('https://www.googleapis.com/drive/v3/files', {
         method: 'POST',
         headers: {
@@ -112,7 +204,7 @@ serve(async (req) => {
         body: JSON.stringify({
           name: fileName,
           mimeType: mimeType,
-          parents: folderId ? [folderId] : []
+          parents: [contentFolderId]
         })
       });
 
@@ -128,7 +220,8 @@ serve(async (req) => {
       
       return new Response(JSON.stringify({ 
         fileId: file.id,
-        uploadUrl: `https://www.googleapis.com/upload/drive/v3/files/${file.id}?uploadType=media`
+        uploadUrl: `https://www.googleapis.com/upload/drive/v3/files/${file.id}?uploadType=media`,
+        folderPath: `MUVTRAINER/${alunoId ? 'aluno' : 'root'}/${refTable || 'outros'}`
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
