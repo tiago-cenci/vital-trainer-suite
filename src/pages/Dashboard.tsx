@@ -53,6 +53,14 @@ function secToHourLabel(sec?: number) {
   return `${h} h`;
 }
 
+// Tipos das views (leve) + client relaxado para views
+type VwMrr = { mrr: number; arpu: number; alunos_com_assinatura: number };
+type VwExecSem = { semana: string; semana_dt: string; execucoes: number };
+type VwCorrStatus = { status: string; qtd: number };
+type VwMedia = { provider: string; gb_total: number; avg_duracao_seg: number | null };
+type VwTopEx = { id: string; nome: string; execucoes: number };
+const sb = supabase as any;
+
 export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats>({
     totalAlunos: 0,
@@ -107,57 +115,41 @@ export default function Dashboard() {
   }, [user, storageSettings]);
 
   // === Fetch Views/Stats ===
-  // tipagens leves das views (opcional, só pra autocomplete)
-type VwMrr = { mrr: number; arpu: number; alunos_com_assinatura: number };
-type VwExecSem = { semana: string; semana_dt: string; execucoes: number };
-type VwCorrStatus = { status: string; qtd: number };
-type VwMedia = { provider: string; gb_total: number; avg_duracao_seg: number | null };
-type VwTopEx = { id: string; nome: string; execucoes: number };
+  const fetchInsights = async (): Promise<Insights> => {
+    const [
+      mrrRes,
+      ativosRes,
+      kpiRes,
+      semRes,
+      corrRes,
+      slaRes,
+      mediaRes,
+      topRes,
+    ] = await Promise.all([
+      sb.from('vw_mrr').select('*').single() as Promise<{ data: VwMrr | null }>,
+      sb.from('vw_alunos_ativos').select('aluno_id', { count: 'exact', head: true }) as Promise<{ count: number }>,
+      sb.from('vw_execucao_kpis').select('*').single() as Promise<{ data: { adesao_pct: number; duracao_media_seg: number } | null }>,
+      sb.from('vw_execucoes_semana').select('*').order('semana_dt', { ascending: true }) as Promise<{ data: VwExecSem[] }>,
+      sb.from('vw_correcoes_status').select('*') as Promise<{ data: VwCorrStatus[] }>,
+      sb.from('vw_correcoes_sla').select('*').single() as Promise<{ data: { sla_medio_seg: number } | null }>,
+      sb.from('vw_media_usage').select('*') as Promise<{ data: VwMedia[] }>,
+      sb.from('vw_top_exercicios').select('*') as Promise<{ data: VwTopEx[] }>,
+    ]);
 
-// use 'sb' sem restrição de tipos para consultar views
-const sb = supabase as any;
-
-const fetchInsights = async () => {
-  const [
-    mrrRes,
-    ativosRes,
-    kpiRes,
-    semRes,
-    corrRes,
-    slaRes,
-    mediaRes,
-    topRes,
-  ] = await Promise.all([
-    sb.from('vw_mrr').select('*').single() as Promise<{ data: VwMrr | null }>,
-    sb
-      .from('vw_alunos_ativos')
-      .select('aluno_id', { count: 'exact', head: true }) as Promise<{ count: number }>,
-    sb.from('vw_execucao_kpis').select('*').single() as Promise<{ data: { adesao_pct: number; duracao_media_seg: number } | null }>,
-    sb
-      .from('vw_execucoes_semana')
-      .select('*')
-      .order('semana_dt', { ascending: true }) as Promise<{ data: VwExecSem[] }>,
-    sb.from('vw_correcoes_status').select('*') as Promise<{ data: VwCorrStatus[] }>,
-    sb.from('vw_correcoes_sla').select('*').single() as Promise<{ data: { sla_medio_seg: number } | null }>,
-    sb.from('vw_media_usage').select('*') as Promise<{ data: VwMedia[] }>,
-    sb.from('vw_top_exercicios').select('*') as Promise<{ data: VwTopEx[] }>,
-  ]);
-
-  return {
-    mrr: mrrRes.data?.mrr ?? 0,
-    arpu: mrrRes.data?.arpu ?? 0,
-    alunosComAssinatura: mrrRes.data?.alunos_com_assinatura ?? 0,
-    alunosAtivos: ativosRes.count ?? 0,
-    adesaoPct: kpiRes.data?.adesao_pct ?? 0,
-    duracaoMediaSeg: kpiRes.data?.duracao_media_seg ?? 0,
-    execSemanais: semRes.data ?? [],
-    correcoesStatus: corrRes.data ?? [],
-    slaMedioSeg: (slaRes.data as any)?.sla_medio_seg ?? 0,
-    mediaUsage: mediaRes.data ?? [],
-    topExercicios: topRes.data ?? [],
+    return {
+      mrr: mrrRes?.data?.mrr ?? 0,
+      arpu: mrrRes?.data?.arpu ?? 0,
+      alunosComAssinatura: mrrRes?.data?.alunos_com_assinatura ?? 0,
+      alunosAtivos: ativosRes?.count ?? 0,
+      adesaoPct: kpiRes?.data?.adesao_pct ?? 0,
+      duracaoMediaSeg: kpiRes?.data?.duracao_media_seg ?? 0,
+      execSemanais: semRes?.data ?? [],
+      correcoesStatus: corrRes?.data ?? [],
+      slaMedioSeg: slaRes?.data?.sla_medio_seg ?? 0,
+      mediaUsage: mediaRes?.data ?? [],
+      topExercicios: topRes?.data ?? [],
+    };
   };
-};
-
 
   useEffect(() => {
     if (!user) return;
@@ -199,14 +191,7 @@ const fetchInsights = async () => {
     fetchAll();
   }, [user]);
 
-  // === UI helpers ===
-  // const statCards = [
-  //   { title: 'Total de Alunos', value: stats.totalAlunos, description: 'Alunos cadastrados', icon: Users, gradient: 'bg-gradient-primary', action: () => navigate('/alunos') },
-  //   { title: 'Exercícios', value: stats.totalExercicios, description: 'Na sua biblioteca', icon: Dumbbell, gradient: 'bg-gradient-secondary', action: () => navigate('/exercicios') },
-  //   { title: 'Treinos Criados', value: stats.totalTreinos, description: 'Total de treinos', icon: ClipboardList, gradient: 'bg-gradient-primary', action: () => navigate('/treinos') },
-  //   { title: 'Treinos Ativos', value: stats.treinosAtivos, description: 'Em andamento', icon: TrendingUp, gradient: 'bg-gradient-secondary', action: () => navigate('/treinos') },
-  // ];
-
+  // === UI ===
   const quickActions = [
     { title: 'Adicionar Aluno', description: 'Cadastrar novo aluno', icon: Users, action: () => navigate('/alunos') },
     { title: 'Criar Treino', description: 'Montar novo treino', icon: ClipboardList, action: () => navigate('/treinos') },
@@ -216,7 +201,6 @@ const fetchInsights = async () => {
 
   const providerLabel = storageSettings?.provider === 'gdrive' ? 'Google Drive (ativo)' : 'Supabase (ativo)';
 
-  // === Subcomponentes visuais (mantém tua estética) ===
   const KpiRow = ({ data }: { data: Insights }) => {
     const cards = [
       { label: 'MRR (R$)', value: data.mrr?.toFixed(2) },
@@ -246,7 +230,7 @@ const fetchInsights = async () => {
       <CardHeader><CardTitle className="text-primary">Execuções por Semana (8)</CardTitle></CardHeader>
       <CardContent className="h-64">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data}>
+          <LineChart data={data || []}>
             <XAxis dataKey="semana" tick={{ fontSize: 12 }} />
             <YAxis tick={{ fontSize: 12 }} />
             <Tooltip />
@@ -262,7 +246,7 @@ const fetchInsights = async () => {
       <CardHeader><CardTitle className="text-primary">Correções por Status</CardTitle></CardHeader>
       <CardContent className="h-64">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data}>
+          <BarChart data={data || []}>
             <XAxis dataKey="status" tick={{ fontSize: 12 }} />
             <YAxis />
             <Tooltip />
@@ -281,15 +265,15 @@ const fetchInsights = async () => {
         <CardContent className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
-              <Pie data={data} dataKey="gb_total" nameKey="provider" innerRadius={50} outerRadius={80} label>
-                {data.map((_: any, i: number) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+              <Pie data={data || []} dataKey="gb_total" nameKey="provider" innerRadius={50} outerRadius={80} label>
+                {(data || []).map((_: any, i: number) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
               </Pie>
               <Tooltip />
             </PieChart>
           </ResponsiveContainer>
-          {data?.length > 0 && (
+          {!!(data && data.length) && (
             <p className="text-sm text-muted-foreground mt-3">
-              Duração média de vídeos: {data.map(d => `${d.provider}: ${secToMinLabel(d.avg_duracao_seg)}`).join(' • ')}
+              Duração média de vídeos: {data.map((d: any) => `${d.provider}: ${secToMinLabel(d.avg_duracao_seg)}`).join(' • ')}
             </p>
           )}
         </CardContent>
@@ -302,7 +286,7 @@ const fetchInsights = async () => {
       <CardHeader><CardTitle className="text-primary">Top Exercícios (30d)</CardTitle></CardHeader>
       <CardContent>
         <ul className="space-y-2">
-          {data.map((r: any) => (
+          {(data || []).map((r: any) => (
             <li key={r.id} className="flex justify-between text-sm">
               <span className="text-foreground">{r.nome}</span>
               <span className="text-muted-foreground">{r.execucoes}</span>
@@ -348,47 +332,11 @@ const fetchInsights = async () => {
             </div>
           </CardHeader>
         </Card>
-                    {/* SLA de Correção */}
-            <Card className="dashboard-card">
-              <CardHeader>
-                <CardTitle className="text-primary">SLA Médio de Correção</CardTitle>
-                <CardDescription>Tempo médio da execução até a primeira correção registrada</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-lg text-muted-foreground">
-                  {secToHourLabel(insights.slaMedioSeg)} em média
-                </div>
-              </CardContent>
-            </Card>
 
         {/* KPIs estratégicos */}
         {insights && <KpiRow data={insights} />}
 
-        {/* KPIs táticos antigos (mantidos) */}
-        {/* <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8 mt-6">
-          {statCards.map((stat, index) => (
-            <Card
-              key={index}
-              className="dashboard-card cursor-pointer group"
-              onClick={stat.action}
-            >
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                  {stat.title}
-                </CardTitle>
-                <div className={`p-3 rounded-xl ${stat.gradient} shadow-sm group-hover:shadow-glow transition-all duration-300`}>
-                  <stat.icon className="h-5 w-5 text-white" strokeWidth={2} />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="stat-number mb-1">{loading ? '...' : stat.value}</div>
-                <p className="text-sm text-muted-foreground">{stat.description}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div> */}
-
-        {/* Gráficos principais */}
+        {/* Gráficos principais + SLA */}
         {insights && (
           <>
             <div className="grid gap-6 md:grid-cols-2">
@@ -401,55 +349,19 @@ const fetchInsights = async () => {
               <TopExercicios data={insights.topExercicios} />
             </div>
 
-
+            <Card className="dashboard-card">
+              <CardHeader>
+                <CardTitle className="text-primary">SLA Médio de Correção</CardTitle>
+                <CardDescription>Tempo médio da execução até a primeira correção registrada</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-lg text-muted-foreground">
+                  {secToHourLabel(insights?.slaMedioSeg)} em média
+                </div>
+              </CardContent>
+            </Card>
           </>
         )}
-
-        {/* Quick Actions + Próximas Sessões (mantidos) */}
-        {/* <div className="grid gap-6 md:grid-cols-2">
-          <Card className="dashboard-card">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-primary font-display">
-                <Plus className="h-5 w-5" />
-                Ações Rápidas
-              </CardTitle>
-              <CardDescription>Acesse as principais funcionalidades</CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-2">
-              {quickActions.map((action, index) => (
-                <Button
-                  key={index}
-                  variant="ghost"
-                  className="justify-start h-auto p-4 hover:bg-muted/80 rounded-lg transition-all duration-200 group"
-                  onClick={action.action}
-                >
-                  <action.icon className="h-5 w-5 mr-3 text-primary group-hover:text-accent transition-colors" strokeWidth={1.5} />
-                  <div className="text-left">
-                    <p className="font-semibold text-foreground">{action.title}</p>
-                    <p className="text-sm text-muted-foreground">{action.description}</p>
-                  </div>
-                </Button>
-              ))}
-            </CardContent>
-          </Card>
-
-          <Card className="dashboard-card">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-primary font-display">
-                <Calendar className="h-5 w-5" />
-                Próximas Sessões
-              </CardTitle>
-              <CardDescription>Suas próximas atividades</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-12 text-muted-foreground">
-                <Calendar className="h-16 w-16 mx-auto mb-4 opacity-30" strokeWidth={1.5} />
-                <p className="font-medium mb-1">Nenhuma sessão agendada</p>
-                <p className="text-sm">Comece criando treinos para seus alunos</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div> */}
       </div>
     </DashboardLayout>
   );
