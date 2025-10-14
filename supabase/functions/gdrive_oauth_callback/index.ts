@@ -39,6 +39,9 @@ serve(async (req) => {
     const clientSecret = Deno.env.get('gdrive_client_secret');
     const redirectUri = Deno.env.get('gdrive_redirect_uri');
 
+    console.log('[gdrive_oauth_callback] Using redirect_uri:', redirectUri);
+    console.log('[gdrive_oauth_callback] Using client_id suffix:', clientId?.slice(-8));
+
     console.log('[gdrive_oauth_callback] Trocando code por tokens...');
     
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
