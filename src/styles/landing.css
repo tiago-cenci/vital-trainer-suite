@@ -1,0 +1,65 @@
+/* === HERO inspirado no ContentSquare – mantendo branding === */
+
+/* gradiente de fundo vinho profundo */
+.hero-maroon-gradient{
+  background:
+    radial-gradient(80rem 60rem at 10% -20%, hsla(0,60%,20%,.35), transparent 60%),
+    radial-gradient(70rem 50rem at 110% 0%, hsla(0,60%,20%,.35), transparent 60%),
+    linear-gradient(180deg, hsl(0 45% 18%) 0%, hsl(0 45% 14%) 50%, hsl(0 46% 12%) 100%);
+}
+
+/* brilho vinho para os blobs */
+.bg-vinho-glow{ background: radial-gradient(closest-side, hsl(0 55% 30%) 0%, transparent 70%); }
+
+/* cápsula da logo (fundo vinho em degradê para tua logo bege): */
+.hero-logo-wrap{
+  background: linear-gradient(135deg, hsl(0 51% 55%) 0%, hsl(0 41% 32%) 100%);
+  box-shadow: 0 10px 35px rgba(66,15,15,.35), inset 0 0 0 1px rgba(255,255,255,.08);
+}
+
+/* chip/gradiente usado no texto MUVTRAINER e no badge do mock */
+.bg-logo-chip-gradient{
+  background: linear-gradient(135deg, hsl(0 51% 55%), hsl(0 35% 28%));
+}
+
+/* destaque da palavra “Treino sério” no hero */
+.text-accent-hero{
+  color: hsl(33 47% 85%); /* bege da tua marca sobre o fundo escuro */
+}
+
+/* container do mock */
+.hero-mock-wrap{
+  position: relative;
+  margin: 0 auto;
+  width: min(560px, 96%);
+  aspect-ratio: 16/11;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow:
+    0 30px 60px rgba(0,0,0,.35),
+    0 0 0 1px rgba(0,0,0,.06);
+  padding: 20px 18px 18px;
+}
+
+/* cartão principal simulando um dashboard */
+.mock-main{
+  width: 100%;
+  height: 62%;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #f6eded 0%, #f3f0ef 100%);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.06);
+}
+
+/* chips inferiores */
+.mock-chip{
+  position: absolute;
+  bottom: 16px;
+  width: 31%;
+  height: 22%;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #efe3dc 0%, #e9ded7 100%);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.08);
+}
+.mock-chip.chip-1{ left: 18px; }
+.mock-chip.chip-2{ left: calc(18px + 33%); }
+.mock-chip.chip-3{ right: 18px; }

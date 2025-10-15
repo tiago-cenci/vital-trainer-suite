@@ -1,55 +1,23 @@
 import { Quote } from 'lucide-react';
 
-export function Testimonials() {
-  const testimonials = [
-    {
-      name: 'Rafael Costa',
-      location: 'São Paulo, SP',
-      role: 'Personal Trainer',
-      quote: 'Consegui dobrar minha base de alunos sem perder qualidade. O sistema de correções por vídeo organizado por exercício mudou completamente meu atendimento.',
-    },
-    {
-      name: 'Juliana Ferreira',
-      location: 'Curitiba, PR',
-      role: 'Especialista em Periodização',
-      quote: 'Finalmente uma plataforma que entende periodização de verdade. Economizo 10+ horas por semana na montagem de treinos com as sugestões de IA.',
-    },
-    {
-      name: 'Marcos Oliveira',
-      location: 'Rio de Janeiro, RJ',
-      role: 'Personal Online',
-      quote: 'Meus alunos adoram o app e eu adoro o dashboard. Consigo ver exatamente quem está aderindo e quem precisa de atenção. Profissionalismo total.',
-    },
+export function Testimonials(){
+  const items = [
+    {name:'Rafael Costa', role:'Personal Trainer', city:'SP', text:'Dobrei a base sem perder qualidade. Correção por vídeo organizada mudou meu atendimento.'},
+    {name:'Juliana Ferreira', role:'Especialista em Periodização', city:'PR', text:'Periodização de verdade. Economia de 10+ horas/semana na montagem com IA.'},
+    {name:'Marcos Oliveira', role:'Personal Online', city:'RJ', text:'Meus alunos amam o app; eu amo o dashboard. Adesão clara e intervenção rápida.'},
   ];
-
   return (
-    <section id="casos" className="py-20 lg:py-32 bg-background scroll-mt-20">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-4">
-            Personals que <span className="text-primary">escalaram com ciência</span>
-          </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Resultados reais de profissionais que levam consultoria online a sério.
-          </p>
-        </div>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-          {testimonials.map((testimonial, index) => (
-            <div
-              key={index}
-              className="dashboard-card p-8 space-y-6 hover-scale"
-            >
-              <Quote className="text-primary/30" size={40} />
-              
-              <p className="text-foreground/90 leading-relaxed italic">
-                "{testimonial.quote}"
-              </p>
-
-              <div className="pt-4 border-t border-border">
-                <p className="font-bold text-foreground">{testimonial.name}</p>
-                <p className="text-sm text-muted-foreground">{testimonial.role}</p>
-                <p className="text-sm text-primary">{testimonial.location}</p>
+    <section id="casos" className="py-20 lg:py-28">
+      <div className="max-w-7xl mx-auto px-4">
+        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-center mb-12">Personals que escalaram com ciência</h2>
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {items.map((t,i)=>(
+            <div key={i} className="dashboard-card p-7 space-y-4 hover-scale">
+              <Quote className="text-[hsl(var(--vinho))]/30" size={36}/>
+              <p className="italic">{`"${t.text}"`}</p>
+              <div className="pt-3 border-t border-[hsl(var(--border))]">
+                <p className="font-semibold">{t.name}</p>
+                <p className="text-sm text-foreground/70">{t.role} • {t.city}</p>
               </div>
             </div>
           ))}

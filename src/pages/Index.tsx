@@ -14,19 +14,21 @@ import { useEffect } from 'react';
 
 const Index = () => {
   useEffect(() => {
-    // Set page title and meta tags
     document.title = 'MUVTRAINER — Plataforma científica para personal trainers online';
-    
-    const metaDescription = document.querySelector('meta[name="description"]');
-    if (metaDescription) {
-      metaDescription.setAttribute('content', 'Crie treinos com IA, receba vídeos, faça correções e acompanhe evolução em um só lugar. Escale sua consultoria sem PDFs e WhatsApp.');
+    const meta = document.querySelector('meta[name="description"]');
+    if (meta) {
+      meta.setAttribute(
+        'content',
+        'Crie treinos com IA, receba vídeos, corrija e acompanhe evolução em um só lugar. Escale sua consultoria sem PDFs e WhatsApp.'
+      );
     }
   }, []);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background text-foreground">
       <Header />
-      <main>
+      {/* 👇 evita sobreposição: padding-top igual à altura do header */}
+      <main className="pt-[var(--header-h)]">
         <Hero />
         <ProblemSolution />
         <Features />

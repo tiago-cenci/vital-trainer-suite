@@ -3,102 +3,75 @@ import { CheckCircle2, ArrowRight } from 'lucide-react';
 import heroImage from '@/assets/hero-fitness.jpg';
 
 export function Hero() {
-  const scrollToSection = (id: string) => {
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
+  const go = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
 
-  const benefits = [
+  const bullets = [
     'Montagem de treinos com IA e periodização',
     'Correções por vídeo organizadas por exercício',
     'Dashboard de evolução e SLA de correções',
   ];
 
   return (
-    <section className="relative min-h-screen flex items-center pt-20 lg:pt-0 overflow-hidden">
-      {/* Background Gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-background via-secondary-light to-background opacity-60" />
-      
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-          {/* Content */}
-          <div className="space-y-8 text-center lg:text-left">
-            <div className="inline-block">
-              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
-                <CheckCircle2 size={16} />
-                Consultoria online de alta performance
-              </span>
-            </div>
+    <section
+      className="
+        relative overflow-hidden
+        bg-[radial-gradient(1200px_500px_at_20%_0%,hsl(var(--acento)/.10),transparent_60%),radial-gradient(900px_400px_at_80%_10%,hsl(var(--vinho)/.10),transparent_60%)]
+      "
+    >
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 lg:py-20">
+        <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+          {/* Texto */}
+          <div>
+            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[hsl(var(--success)/.12)] text-[hsl(var(--vinho))] text-xs font-semibold">
+              consultoria online de alta performance
+            </span>
+            <h1 className="mt-4 text-4xl sm:text-5xl font-extrabold leading-tight tracking-tight text-[hsl(var(--foreground))]">
+              Chega de PDF e gambiarra.
+              <br />
+              <span className="text-[hsl(var(--vinho))]">Treino sério</span> exige
+              <br /> método — e <span className="text-[hsl(var(--vinho))]">MUVTRAINER</span>.
+            </h1>
 
-            <div className="space-y-4">
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground leading-tight">
-                MUVTRAINER — Consultoria online{' '}
-                <span className="bg-gradient-primary bg-clip-text text-transparent">
-                  guiada pela ciência
-                </span>
-              </h1>
-              
-              <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl">
-                Crie treinos em minutos, acompanhe com precisão e escale sua consultoria sem confusão de PDFs e WhatsApp.
-              </p>
-            </div>
+            <p className="mt-6 text-lg text-foreground/80 max-w-xl">
+              Monte treinos em minutos, receba execuções, corrija com precisão e escale sua consultoria sem perder qualidade.
+            </p>
 
-            {/* Benefits */}
-            <div className="space-y-3">
-              {benefits.map((benefit, index) => (
-                <div key={index} className="flex items-start gap-3 justify-center lg:justify-start">
-                  <CheckCircle2 className="text-accent shrink-0 mt-1" size={20} />
-                  <span className="text-foreground/90">{benefit}</span>
-                </div>
+            <ul className="mt-6 space-y-3">
+              {bullets.map((b, i) => (
+                <li key={i} className="flex items-start gap-2 text-foreground/90">
+                  <CheckCircle2 className="text-[hsl(var(--success))] mt-0.5" size={18} />
+                  <span>{b}</span>
+                </li>
               ))}
-            </div>
+            </ul>
 
-            {/* CTAs */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <button onClick={() => scrollToSection('comece-agora')}>
-                <Button size="lg" className="fitness-button w-full sm:w-auto">
-                  Começar teste grátis
-                  <ArrowRight className="ml-2" size={18} />
+            <div className="mt-8 flex flex-col sm:flex-row gap-3">
+              <a href="#comece-agora">
+                <Button size="lg" className="fitness-button">
+                  Começar teste grátis <ArrowRight className="ml-2" size={18} />
                 </Button>
+              </a>
+              <button onClick={() => go('recursos')}>
+                <Button size="lg" variant="outline">Ver recursos</Button>
               </button>
-              <button onClick={() => scrollToSection('recursos')}>
-                <Button size="lg" variant="outline" className="w-full sm:w-auto">
-                  Ver recursos
-                </Button>
-              </button>
-            </div>
-
-            {/* Social Proof */}
-            <div className="pt-6 border-t border-border">
-              <p className="text-sm text-muted-foreground">
-                <span className="font-semibold text-primary">+200 alunos por personal</span> sem perder qualidade
-              </p>
             </div>
           </div>
 
-          {/* Hero Image */}
+          {/* Imagem */}
           <div className="relative">
-            <div className="relative rounded-2xl overflow-hidden shadow-primary">
-              <img
-                src={heroImage}
-                alt="Dashboard MUVTRAINER mostrando gestão de treinos e evolução de alunos"
-                className="w-full h-auto"
-                loading="eager"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-primary/20 to-transparent" />
+            <div className="rounded-2xl overflow-hidden border border-[hsl(var(--border))] shadow-[0_20px_60px_-25px_rgba(0,0,0,.25)]">
+              <img src={heroImage} alt="" className="w-full h-auto" loading="eager" />
             </div>
-            
-            {/* Floating Stats */}
-            <div className="absolute -bottom-6 -left-6 bg-card border border-border rounded-xl p-4 shadow-card hidden lg:block">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gradient-primary rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-xl">95%</span>
+
+            {/* Badge flutuante */}
+            <div className="hidden md:block absolute -bottom-6 -left-6">
+              <div className="dashboard-card p-4 flex items-center gap-3">
+                <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-[hsl(var(--vinho))] to-[hsl(var(--acento))] text-white font-bold flex items-center justify-center">
+                  95%
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Taxa de adesão</p>
-                  <p className="text-sm font-semibold text-foreground">Treinos concluídos</p>
+                  <p className="text-sm font-semibold">Treinos concluídos</p>
                 </div>
               </div>
             </div>

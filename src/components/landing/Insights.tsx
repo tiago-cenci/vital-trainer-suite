@@ -1,53 +1,24 @@
 import { Activity, Clock, Trophy } from 'lucide-react';
 
-export function Insights() {
+export function Insights(){
   const stats = [
-    {
-      icon: Activity,
-      value: '850+',
-      label: 'Execuções por semana',
-      description: 'Volume médio de vídeos enviados por personal',
-    },
-    {
-      icon: Clock,
-      value: '< 24h',
-      label: 'SLA médio de correção',
-      description: 'Tempo de resposta profissional e consistente',
-    },
-    {
-      icon: Trophy,
-      value: 'Top 5',
-      label: 'Exercícios mais realizados',
-      description: 'Insights para ajustar programação',
-    },
+    {icon:Activity, value:'850+', label:'execuções/semana', sub:'volume real por personal'},
+    {icon:Clock, value:'< 24h', label:'SLA médio', sub:'resposta previsível'},
+    {icon:Trophy, value:'Top 5', label:'exercícios do mês', sub:'programação guiada por dados'},
   ];
-
   return (
-    <section className="py-20 lg:py-32 bg-secondary-light/30">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-4">
-            Dados e <span className="text-primary">insights reais</span>
-          </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Visualize métricas importantes e tome decisões baseadas em dados concretos.
-          </p>
-        </div>
-
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 max-w-5xl mx-auto">
-          {stats.map((stat, index) => (
-            <div
-              key={index}
-              className="dashboard-card p-8 text-center space-y-4 hover-scale"
-            >
-              <div className="w-16 h-16 bg-gradient-primary rounded-xl flex items-center justify-center mx-auto">
-                <stat.icon className="text-white" size={32} />
+    <section className="py-20 lg:py-28">
+      <div className="max-w-6xl mx-auto px-4">
+        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-center mb-12">Dados e <span className="text-[hsl(var(--vinho))]">insights reais</span></h2>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {stats.map((s,i)=>(
+            <div key={i} className="dashboard-card p-8 text-center hover-scale">
+              <div className="w-16 h-16 mx-auto mb-3 rounded-xl flex items-center justify-center" style={{backgroundImage:'linear-gradient(135deg,hsl(var(--vinho)),hsl(var(--acento)))'}}>
+                <s.icon className="text-white" size={28}/>
               </div>
-              <div className="space-y-2">
-                <div className="stat-number">{stat.value}</div>
-                <h3 className="text-lg font-bold text-foreground">{stat.label}</h3>
-                <p className="text-sm text-muted-foreground">{stat.description}</p>
-              </div>
+              <div className="text-4xl font-black">{s.value}</div>
+              <div className="font-semibold">{s.label}</div>
+              <div className="text-sm text-foreground/60">{s.sub}</div>
             </div>
           ))}
         </div>
