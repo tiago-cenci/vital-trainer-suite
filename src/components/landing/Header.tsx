@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import logo from '@/assets/logo-full.svg';      // sua logo completa
-import iconLogo from '@/assets/logo-icon.svg';  // seu ícone
+import logo from '@/assets/muvtrainer-logo.svg';      // sua logo completa
+import iconLogo from '@/assets/icon-logo.svg';  // seu ícone
 
 export function Header() {
   const [scrolled, setScrolled] = useState(false);
