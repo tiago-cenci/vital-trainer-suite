@@ -18,6 +18,7 @@ import Treinos from "./pages/Treinos";
 import Correcoes from "./pages/Correcoes";
 import Alongamentos from "./pages/Alongamentos";
 import AuthCallback from "./pages/AuthCallback";
+import Index from "./pages/Index";
 
 const queryClient = new QueryClient();
 
@@ -37,9 +38,16 @@ function AppRoutes() {
 
   return (
     <Routes>
+      {/* Landing page - always accessible */}
+      <Route path="/" element={<Index />} />
+      
       {/* Auth routes - redirect to dashboard if already authenticated */}
       <Route
         path="/login"
+        element={user ? <Navigate to="/dashboard" replace /> : <Login />}
+      />
+      <Route
+        path="/auth"
         element={user ? <Navigate to="/dashboard" replace /> : <Login />}
       />
       <Route
@@ -126,12 +134,6 @@ function AppRoutes() {
             </div>
           </ProtectedRoute>
         }
-      />
-
-      {/* Root redirect */}
-      <Route
-        path="/"
-        element={user ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />}
       />
 
       <Route path="*" element={<NotFound />} />
