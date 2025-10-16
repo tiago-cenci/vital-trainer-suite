@@ -19,11 +19,13 @@ import Correcoes from "./pages/Correcoes";
 import Alongamentos from "./pages/Alongamentos";
 import AuthCallback from "./pages/AuthCallback";
 import Index from "./pages/Index";
+import { useGaPageview } from "./analytics/useGaPageview";
 
 const queryClient = new QueryClient();
 
 function AppRoutes() {
   const { user, loading } = useAuth();
+   useGaPageview(); 
 
   if (loading) {
     return (
