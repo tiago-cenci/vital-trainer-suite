@@ -39,10 +39,11 @@ export function useCorrecoesList(filters: CorrecoesFilters = {}) {
     queryFn: async (): Promise<CorrecaoRow[]> => {
       if (!user) throw new Error('Usuário não autenticado');
 
-      // 1) Buscar execuções base
+      // 1) Buscar execuções base - APENAS COM VÍDEO
       let q = supabase
         .from('sessoes_exercicios_execucoes')
         .select('id, created_at, started_at, video_path, sessoes_exercicios_id, treino_execucao_id, ordem')
+        .not('video_path', 'is', null)
         .order('created_at', { ascending: false })
         .limit(filters.limit ?? 100);
 
