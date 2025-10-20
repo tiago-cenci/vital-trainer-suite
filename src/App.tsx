@@ -90,7 +90,9 @@ function AppRoutes() {
       />
 
       <Route path="/treinos" element={<ProtectedRoute><Treinos /></ProtectedRoute>} />
-      <Route path="/auth/callback" element={<ProtectedRoute><AuthCallback /></ProtectedRoute>} />
+      
+      {/* OAuth callback - must NOT be protected to allow Google redirect */}
+      <Route path="/auth/callback" element={<AuthCallback />} />
 
       <Route path="/correcoes" element={<ProtectedRoute><Correcoes /></ProtectedRoute>} />
 

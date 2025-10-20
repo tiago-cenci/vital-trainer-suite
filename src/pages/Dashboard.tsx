@@ -80,8 +80,8 @@ export default function Dashboard() {
   const handleConnectDrive = () => {
     if (!user) return;
     const p = new URLSearchParams({
-      client_id: import.meta.env.VITE_GDRIVE_CLIENT_ID || '',
-      redirect_uri: import.meta.env.VITE_GDRIVE_REDIRECT_URI || 'https://muvtrainer.lovable.app/auth/callback',
+      client_id: '735901705166-34jjdvajlnf4m6sftfvte9bih0frehta.apps.googleusercontent.com',
+      redirect_uri: 'https://muvtrainer.lovable.app/auth/callback',
       response_type: 'code',
       scope: 'https://www.googleapis.com/auth/drive.file openid email profile',
       access_type: 'offline',

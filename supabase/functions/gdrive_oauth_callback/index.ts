@@ -39,6 +39,17 @@ serve(async (req) => {
     const clientSecret = Deno.env.get('gdrive_client_secret');
     const redirectUri = Deno.env.get('gdrive_redirect_uri');
 
+    if (!clientId || !clientSecret || !redirectUri) {
+      console.error('[gdrive_oauth_callback] Secrets missing!', { clientId: !!clientId, clientSecret: !!clientSecret, redirectUri: !!redirectUri });
+      return new Response(null, {
+        status: 302,
+        headers: {
+          ...corsHeaders,
+          'Location': 'https://muvtrainer.lovable.app/dashboard?error=missing_secrets'
+        }
+      });
+    }
+
     console.log('[gdrive_oauth_callback] Using redirect_uri:', redirectUri);
     console.log('[gdrive_oauth_callback] Using client_id suffix:', clientId?.slice(-8));
 

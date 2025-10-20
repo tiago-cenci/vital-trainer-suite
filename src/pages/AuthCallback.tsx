@@ -11,7 +11,8 @@ export default function AuthCallback() {
       return;
     }
 
-    const functionsUrl = import.meta.env.VITE_SUPABASE_FUNCTIONS_URL;
+    // Redirect to edge function (no auth required at this stage)
+    const functionsUrl = 'https://kjqoesfrehzcrtvrcktm.functions.supabase.co';
     const url = `${functionsUrl}/gdrive_oauth_callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state)}`;
     window.location.replace(url);
   }, []);
