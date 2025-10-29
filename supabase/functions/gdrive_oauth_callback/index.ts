@@ -25,7 +25,7 @@ serve(async (req) => {
         status: 302,
         headers: {
           ...corsHeaders,
-          'Location': 'https://muvtrainer.lovable.app/dashboard?error=missing_code'
+          'Location': 'https://muvtrainer.com/dashboard?error=missing_code'
         }
       });
     }
@@ -45,7 +45,7 @@ serve(async (req) => {
         status: 302,
         headers: {
           ...corsHeaders,
-          'Location': 'https://muvtrainer.lovable.app/dashboard?error=missing_secrets'
+          'Location': 'https://muvtrainer.com/dashboard?error=missing_secrets'
         }
       });
     }
@@ -74,7 +74,7 @@ serve(async (req) => {
         status: 302,
         headers: {
           ...corsHeaders,
-          'Location': 'https://muvtrainer.lovable.app/dashboard?error=token_exchange_failed'
+          'Location': 'https://muvtrainer.com/dashboard?error=token_exchange_failed'
         }
       });
     }
@@ -112,7 +112,7 @@ serve(async (req) => {
         status: 302,
         headers: {
           ...corsHeaders,
-          'Location': 'https://muvtrainer.lovable.app/dashboard?error=save_tokens_failed'
+          'Location': 'https://muvtrainer.com/dashboard?error=save_tokens_failed'
         }
       });
     }
@@ -161,7 +161,7 @@ serve(async (req) => {
       status: 302,
       headers: {
         ...corsHeaders,
-        'Location': 'https://muvtrainer.lovable.app/dashboard?connected=1'
+        'Location': 'https://muvtrainer.com/dashboard?connected=1'
       }
     });
 
@@ -171,7 +171,7 @@ serve(async (req) => {
       status: 302,
       headers: {
         ...corsHeaders,
-        'Location': 'https://muvtrainer.lovable.app/dashboard?error=general_error'
+        'Location': 'https://muvtrainer.com/dashboard?error=general_error'
       }
     });
   }
