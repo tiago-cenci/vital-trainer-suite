@@ -13,7 +13,7 @@ export default function AuthCallback() {
 
     // Redirect to edge function (no auth required at this stage)
     const functionsUrl = 'https://kjqoesfrehzcrtvrcktm.supabase.co';
-    const url = `${functionsUrl}/functions/v1/gdrive_oauth_callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(btoa(state))}`;
+    const url = `${functionsUrl}/functions/v1/gdrive_oauth_callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state)}`;
     window.location.replace(url);
 
   }, []);
