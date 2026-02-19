@@ -16,17 +16,26 @@ export function useExecVideoUrl(videoPath: string | null | undefined) {
       // Google Drive video
       if (videoPath.startsWith('gdrive://')) {
         const fileId = videoPath.replace('gdrive://', '');
-        
-        const { data, error } = await supabase.functions.invoke('gdrive_proxy', {
-          body: { action: 'download', fileId },
+        const session = (await supabase.auth.getSession()).data.session;
+        if (!session?.access_token) throw new Error('Sessão inválida');
+
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const res = await fetch(`${supabaseUrl}/functions/v1/gdrive_proxy`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ action: 'download', fileId }),
         });
 
-        if (error) {
-          throw new Error(`Erro ao baixar vídeo do Drive: ${error.message}`);
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(`Erro ao baixar vídeo do Drive: ${errText}`);
         }
 
-        // data is already a Blob when using functions.invoke
-        const blob = data instanceof Blob ? data : new Blob([data]);
+        const blob = await res.blob();
         return URL.createObjectURL(blob);
       }
 
