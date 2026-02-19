@@ -11,7 +11,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 import { useExecucao, useCorrecaoAtual, useSalvarCorrecao, useUploadMidiaCorrecao, useMidiasCorrecao } from '@/hooks/useCorrecao';
-import { useSignedUrl } from '@/hooks/useSignedUrl';
+import { useExecVideoUrl } from '@/hooks/useExecVideoUrl';
 import { MidiaThumb } from './MidiaThumb';
 
 interface CorrecaoModalProps {
@@ -35,7 +35,7 @@ export function CorrecaoModal({
 }: CorrecaoModalProps) {
   const { data: exec, isLoading: loadingExec } = useExecucao(execId || '');
   const { data: correcao, isLoading: loadingCorr } = useCorrecaoAtual(execId || '');
-  const { data: videoUrl } = useSignedUrl('exercicio-videos', exec?.video_path ?? null);
+  const { data: videoUrl, isLoading: loadingVideo } = useExecVideoUrl(exec?.video_path);
   const { data: midias = [] } = useMidiasCorrecao(correcao?.id);
 
   const salvar = useSalvarCorrecao(execId || '');

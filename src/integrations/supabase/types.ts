@@ -166,6 +166,13 @@ export type Database = {
             referencedRelation: "alunos"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "assinaturas_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "vw_alunos_ativos"
+            referencedColumns: ["aluno_id"]
+          },
         ]
       }
       correcoes: {
@@ -658,6 +665,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "sessoes_exercicios_exercicio_id_fkey"
+            columns: ["exercicio_id"]
+            isOneToOne: false
+            referencedRelation: "vw_top_exercicios"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "sessoes_exercicios_sessao_id_fkey"
             columns: ["sessao_id"]
             isOneToOne: false
@@ -849,6 +863,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "treinos_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "vw_alunos_ativos"
+            referencedColumns: ["aluno_id"]
+          },
+          {
             foreignKeyName: "treinos_periodizacao_id_fkey"
             columns: ["periodizacao_id"]
             isOneToOne: false
@@ -900,6 +921,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "treinos_execucoes_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "vw_alunos_ativos"
+            referencedColumns: ["aluno_id"]
+          },
+          {
             foreignKeyName: "treinos_execucoes_sessao_id_fkey"
             columns: ["sessao_id"]
             isOneToOne: false
@@ -917,41 +945,114 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      vw_active_subscriptions: {
+        Row: {
+          aluno_id: string | null
+          data_inicio: string | null
+          data_vencimento: string | null
+          id: string | null
+          valor: number | null
+        }
+        Insert: {
+          aluno_id?: string | null
+          data_inicio?: string | null
+          data_vencimento?: string | null
+          id?: string | null
+          valor?: number | null
+        }
+        Update: {
+          aluno_id?: string | null
+          data_inicio?: string | null
+          data_vencimento?: string | null
+          id?: string | null
+          valor?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assinaturas_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assinaturas_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "vw_alunos_ativos"
+            referencedColumns: ["aluno_id"]
+          },
+        ]
+      }
+      vw_alunos_ativos: {
+        Row: {
+          aluno_id: string | null
+        }
+        Relationships: []
+      }
+      vw_correcoes_sla: {
+        Row: {
+          sla_medio_seg: number | null
+        }
+        Relationships: []
+      }
+      vw_correcoes_status: {
+        Row: {
+          qtd: number | null
+          status: string | null
+        }
+        Relationships: []
+      }
+      vw_execucao_kpis: {
+        Row: {
+          adesao_pct: number | null
+          concluidas: number | null
+          duracao_media_seg: number | null
+          iniciadas: number | null
+        }
+        Relationships: []
+      }
+      vw_execucoes_semana: {
+        Row: {
+          execucoes: number | null
+          semana: string | null
+          semana_dt: string | null
+        }
+        Relationships: []
+      }
+      vw_media_usage: {
+        Row: {
+          avg_duracao_seg: number | null
+          bytes_total: number | null
+          gb_total: number | null
+          provider: string | null
+        }
+        Relationships: []
+      }
+      vw_mrr: {
+        Row: {
+          alunos_com_assinatura: number | null
+          arpu: number | null
+          mrr: number | null
+        }
+        Relationships: []
+      }
+      vw_top_exercicios: {
+        Row: {
+          execucoes: number | null
+          id: string | null
+          nome: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       adicionar_alongamentos_por_tag: {
         Args: { p_sessao_id: string; p_tag_id: string }
         Returns: number
       }
-      gtrgm_compress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gtrgm_decompress: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gtrgm_in: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      gtrgm_options: {
-        Args: { "": unknown }
-        Returns: undefined
-      }
-      gtrgm_out: {
-        Args: { "": unknown }
-        Returns: unknown
-      }
-      is_exec_do_aluno: {
-        Args: { exec_id: string }
-        Returns: boolean
-      }
-      is_exec_do_meu_aluno: {
-        Args: { exec_id: string }
-        Returns: boolean
-      }
+      is_exec_do_aluno: { Args: { exec_id: string }; Returns: boolean }
+      is_exec_do_meu_aluno: { Args: { exec_id: string }; Returns: boolean }
       listar_alongamentos_sessao: {
         Args: { p_sessao_id: string }
         Returns: {
@@ -985,18 +1086,8 @@ export type Database = {
           video_path: string
         }[]
       }
-      set_limit: {
-        Args: { "": number }
-        Returns: number
-      }
-      show_limit: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
-      show_trgm: {
-        Args: { "": string }
-        Returns: string[]
-      }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
     }
     Enums: {
       correcao_status: "RASCUNHO" | "ENVIADA"
