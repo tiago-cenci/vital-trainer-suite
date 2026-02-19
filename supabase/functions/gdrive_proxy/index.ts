@@ -230,7 +230,39 @@ serve(async (req) => {
       }
 
       const file = await driveResponse.json();
-      
+
+      // Compartilhar com o aluno (leitura) se tiver email
+      if (alunoId) {
+        const { data: alunoData } = await supabaseAdmin
+          .from('alunos')
+          .select('email')
+          .eq('id', alunoId)
+          .single();
+
+        if (alunoData?.email) {
+          try {
+            await fetch(
+              `https://www.googleapis.com/drive/v3/files/${file.id}/permissions`,
+              {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${accessToken}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  role: 'reader',
+                  type: 'user',
+                  emailAddress: alunoData.email,
+                }),
+              }
+            );
+            console.log('[gdrive_proxy] Permissão de leitura concedida ao aluno:', alunoData.email);
+          } catch (permErr: any) {
+            console.error('[gdrive_proxy] Erro ao compartilhar com aluno:', permErr.message);
+          }
+        }
+      }
+
       return new Response(JSON.stringify({ 
         fileId: file.id,
         uploadUrl: `https://www.googleapis.com/upload/drive/v3/files/${file.id}?uploadType=media`,
