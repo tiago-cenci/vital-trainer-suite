@@ -40,11 +40,22 @@ serve(async (req) => {
     const { action, ...params } = await req.json();
 
     // Usar Service Role para ler tokens
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || Deno.env.get('supabase_service_role_key');
+    if (!serviceRoleKey) {
+      console.error('[gdrive_proxy] Service role key não encontrada');
+      return new Response(JSON.stringify({ error: 'Server misconfigured' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('supabase_service_role_key')!,
+      serviceRoleKey,
       { auth: { persistSession: false } }
     );
+
+    console.log('[gdrive_proxy] Buscando tokens para user:', user.id);
 
     const { data: tokenData, error: tokenError } = await supabaseAdmin
       .from('oauth_tokens')
@@ -52,6 +63,8 @@ serve(async (req) => {
       .eq('user_id', user.id)
       .eq('provider', 'gdrive')
       .single();
+
+    console.log('[gdrive_proxy] Token query result:', tokenError ? `ERROR: ${tokenError.message}` : 'found');
 
     if (tokenError || !tokenData) {
       return new Response(JSON.stringify({ error: 'No Drive tokens found' }), {
