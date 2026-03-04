@@ -4,13 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, UploadCloud, ChevronLeft, ChevronRight, Video, Clock, User } from 'lucide-react';
+import { Loader2, UploadCloud, ChevronLeft, ChevronRight, Video, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-import { useExecucao, useCorrecaoAtual, useSalvarCorrecao, useUploadMidiaCorrecao, useMidiasCorrecao } from '@/hooks/useCorrecao';
+import { useExecucao, useCorrecaoAtual, useSalvarCorrecao, useUploadMidiaCorrecao, useMidiasCorrecao, useDeleteMidiaCorrecao } from '@/hooks/useCorrecao';
 import { useExecVideoUrl } from '@/hooks/useExecVideoUrl';
 import { MidiaThumb } from './MidiaThumb';
 
@@ -25,13 +24,8 @@ interface CorrecaoModalProps {
 }
 
 export function CorrecaoModal({ 
-  execId, 
-  open, 
-  onOpenChange, 
-  onNext, 
-  onPrev,
-  currentIndex = 0,
-  totalVideos = 1,
+  execId, open, onOpenChange, onNext, onPrev,
+  currentIndex = 0, totalVideos = 1,
 }: CorrecaoModalProps) {
   const { data: exec, isLoading: loadingExec } = useExecucao(execId || '');
   const { data: correcao, isLoading: loadingCorr } = useCorrecaoAtual(execId || '');
@@ -40,8 +34,10 @@ export function CorrecaoModal({
 
   const salvar = useSalvarCorrecao(execId || '');
   const upload = useUploadMidiaCorrecao(correcao?.id);
+  const deleteMidia = useDeleteMidiaCorrecao(correcao?.id);
 
   const [texto, setTexto] = useState<string>('');
+  const [removingId, setRemovingId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -50,224 +46,190 @@ export function CorrecaoModal({
 
   const disableActions = salvar.isPending || upload.isPending || loadingExec || loadingCorr;
 
-  const getStatusBadge = () => {
-    if (!correcao) return <Badge variant="outline">Nova correção</Badge>;
-    
-    switch (correcao.status) {
-      case 'ENVIADA':
-        return <Badge>Enviada</Badge>;
-      case 'RASCUNHO':
-        return <Badge variant="secondary">Rascunho</Badge>;
-      default:
-        return <Badge variant="outline">Sem correção</Badge>;
+  const handleFilesSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      upload.mutate(Array.from(files));
     }
+    e.currentTarget.value = '';
   };
+
+  const handleRemoveMidia = (midia: any) => {
+    setRemovingId(midia.id);
+    deleteMidia.mutate(midia, {
+      onSettled: () => setRemovingId(null),
+    });
+  };
+
+  const statusBadge = !correcao 
+    ? <Badge variant="outline">Nova correção</Badge>
+    : correcao.status === 'ENVIADA' 
+      ? <Badge>Enviada</Badge>
+      : <Badge variant="secondary">Rascunho</Badge>;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl w-full h-[90vh] p-0 overflow-hidden flex flex-col">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b">
-          <div className="flex items-center justify-between">
+      <DialogContent className="max-w-6xl w-[95vw] max-h-[95vh] p-0 overflow-hidden flex flex-col">
+        {/* Header */}
+        <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 border-b flex-shrink-0">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="space-y-1">
-              <DialogTitle className="text-2xl font-bold">Correção de Execução</DialogTitle>
+              <DialogTitle className="text-lg sm:text-2xl font-bold">Correção de Execução</DialogTitle>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 {totalVideos > 1 && (
-                  <span className="font-medium">
-                    Vídeo {currentIndex + 1} de {totalVideos}
-                  </span>
+                  <span className="font-medium">Vídeo {currentIndex + 1} de {totalVideos}</span>
                 )}
-                {getStatusBadge()}
+                {statusBadge}
               </div>
             </div>
             {totalVideos > 1 && (
               <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={onPrev}
-                  disabled={disableActions}
-                >
-                  <ChevronLeft className="h-4 w-4 mr-1" />
-                  Anterior
+                <Button variant="outline" size="sm" onClick={onPrev} disabled={disableActions}>
+                  <ChevronLeft className="h-4 w-4 mr-1" /> Anterior
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={onNext}
-                  disabled={disableActions}
-                >
-                  Próximo
-                  <ChevronRight className="h-4 w-4 ml-1" />
+                <Button variant="outline" size="sm" onClick={onNext} disabled={disableActions}>
+                  Próximo <ChevronRight className="h-4 w-4 ml-1" />
                 </Button>
               </div>
             )}
           </div>
         </DialogHeader>
 
-        <div className="flex-1 overflow-hidden">
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-0 h-full">
-            {/* ESQUERDA: vídeo e informações - 3/5 */}
-            <div className="lg:col-span-3 p-6 border-r overflow-y-auto">
-              <div className="space-y-6">
-                {/* Vídeo */}
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Video className="h-4 w-4 text-primary" />
-                    <Label className="text-sm font-semibold">Vídeo da Execução</Label>
-                  </div>
-                  {exec?.video_path ? (
-                    videoUrl ? (
-                      <video 
-                        controls 
-                        className="w-full rounded-xl border shadow-sm bg-black" 
-                        src={videoUrl}
-                        key={videoUrl}
-                      />
-                    ) : (
-                      <div className="w-full aspect-video bg-muted rounded-xl animate-pulse flex items-center justify-center">
-                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                      </div>
-                    )
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-0">
+            {/* LEFT: video + info */}
+            <div className="lg:col-span-3 p-4 sm:p-6 lg:border-r space-y-4">
+              {/* Video */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Video className="h-4 w-4 text-primary" />
+                  <Label className="text-sm font-semibold">Vídeo da Execução</Label>
+                </div>
+                {exec?.video_path ? (
+                  videoUrl ? (
+                    <video controls className="w-full rounded-xl border shadow-sm bg-black max-h-[50vh]" src={videoUrl} key={videoUrl} />
                   ) : (
-                    <div className="p-8 bg-muted rounded-xl text-center">
-                      <Video className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
-                      <p className="text-sm text-muted-foreground">Execução sem vídeo</p>
+                    <div className="w-full aspect-video bg-muted rounded-xl animate-pulse flex items-center justify-center">
+                      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                     </div>
-                  )}
-                </div>
+                  )
+                ) : (
+                  <div className="p-6 bg-muted rounded-xl text-center">
+                    <Video className="h-10 w-10 mx-auto mb-2 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">Execução sem vídeo</p>
+                  </div>
+                )}
+              </div>
 
-                {/* Informações da execução */}
-                <div className="grid grid-cols-2 gap-4 p-4 bg-muted/30 rounded-lg">
+              {/* Exec info */}
+              <div className="grid grid-cols-2 gap-3 p-3 bg-muted/30 rounded-lg text-sm">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Clock className="h-3 w-3" /> Início
+                  </div>
+                  <div className="font-medium">
+                    {exec?.started_at ? format(new Date(exec.started_at), "d 'de' MMM 'às' HH:mm", { locale: ptBR }) : '—'}
+                  </div>
+                </div>
+                {exec?.ended_at && (
                   <div className="space-y-1">
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Clock className="h-3 w-3" />
-                      Início
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <Clock className="h-3 w-3" /> Fim
                     </div>
-                    <div className="text-sm font-medium">
-                      {exec?.started_at 
-                        ? format(new Date(exec.started_at), "d 'de' MMM 'às' HH:mm", { locale: ptBR })
-                        : '—'}
+                    <div className="font-medium">
+                      {format(new Date(exec.ended_at), "d 'de' MMM 'às' HH:mm", { locale: ptBR })}
                     </div>
                   </div>
-                  {exec?.ended_at && (
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Clock className="h-3 w-3" />
-                        Fim
-                      </div>
-                      <div className="text-sm font-medium">
-                        {format(new Date(exec.ended_at), "d 'de' MMM 'às' HH:mm", { locale: ptBR })}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <Separator />
-
-                {/* Mídias anexadas */}
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <UploadCloud className="h-4 w-4 text-primary" />
-                    <Label className="text-sm font-semibold">Mídias Anexadas à Correção</Label>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {midias.length === 0 ? (
-                      <div className="text-sm text-muted-foreground">
-                        Nenhuma mídia anexada ainda. Use o botão ao lado para adicionar.
-                      </div>
-                    ) : (
-                      midias.map((m) => (
-                        <MidiaThumb key={m.id} bucket="correcoes" path={m.path} tipo={m.tipo as any} />
-                      ))
-                    )}
-                  </div>
-                </div>
+                )}
               </div>
             </div>
 
-            {/* DIREITA: editor e ações - 2/5 */}
-            <div className="lg:col-span-2 flex flex-col h-full">
-              <ScrollArea className="flex-1 p-6">
-                <div className="space-y-4">
-                  {/* Editor de texto */}
-                  <div className="space-y-2">
-                    <Label className="text-sm font-semibold">Feedback da Correção *</Label>
-                    <Textarea
-                      value={texto}
-                      onChange={(e) => setTexto(e.target.value)}
-                      placeholder="Explique pontos de postura, técnica, amplitude, respiração, carga, tempo de descanso, etc."
-                      rows={12}
-                      className="resize-none"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Seja específico e construtivo no feedback. O aluno verá essa mensagem no app.
-                    </p>
-                  </div>
+            {/* RIGHT: feedback + upload + media */}
+            <div className="lg:col-span-2 p-4 sm:p-6 space-y-4 border-t lg:border-t-0">
+              {/* Feedback text */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">Feedback da Correção *</Label>
+                <Textarea
+                  value={texto}
+                  onChange={(e) => setTexto(e.target.value)}
+                  placeholder="Explique pontos de postura, técnica, amplitude, respiração, carga, tempo de descanso, etc."
+                  rows={8}
+                  className="resize-none"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Seja específico e construtivo. O aluno verá essa mensagem no app.
+                </p>
+              </div>
 
-                  <Separator />
+              <Separator />
 
-                  {/* Upload de anexos */}
-                  <div className="space-y-2">
-                    <Label className="text-sm font-semibold">Anexar Foto ou Vídeo</Label>
-                    <input
-                      ref={fileRef}
-                      type="file"
-                      accept="image/*,video/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        if (f) upload.mutate(f);
-                        e.currentTarget.value = '';
-                      }}
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => fileRef.current?.click()}
-                      disabled={!correcao?.id || upload.isPending}
-                    >
-                      {upload.isPending ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Enviando...
-                        </>
-                      ) : (
-                        <>
-                          <UploadCloud className="h-4 w-4 mr-2" />
-                          {correcao?.id ? 'Adicionar mídia' : 'Salve um rascunho antes'}
-                        </>
-                      )}
-                    </Button>
+              {/* Upload */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">Anexar Fotos ou Vídeos</Label>
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/*,video/*"
+                  multiple
+                  className="hidden"
+                  onChange={handleFilesSelected}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => fileRef.current?.click()}
+                  disabled={!correcao?.id || upload.isPending}
+                >
+                  {upload.isPending ? (
+                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Enviando...</>
+                  ) : (
+                    <><UploadCloud className="h-4 w-4 mr-2" /> {correcao?.id ? 'Selecionar arquivos' : 'Salve um rascunho antes'}</>
+                  )}
+                </Button>
+              </div>
+
+              {/* Media thumbnails */}
+              {midias.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold">Mídias Anexadas ({midias.length})</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {midias.map((m) => (
+                      <MidiaThumb
+                        key={m.id}
+                        bucket="correcoes"
+                        path={m.path}
+                        tipo={m.tipo as any}
+                        onRemove={() => handleRemoveMidia(m)}
+                        removing={removingId === m.id}
+                      />
+                    ))}
                   </div>
                 </div>
-              </ScrollArea>
+              )}
 
-              {/* Ações */}
-              <div className="p-6 border-t bg-muted/20">
-                <div className="flex flex-col gap-2">
-                  <Button
-                    variant="outline"
-                    disabled={disableActions || !texto.trim()}
-                    onClick={() => salvar.mutate({ id: correcao?.id, texto, status: 'RASCUNHO' })}
-                    className="w-full"
-                  >
-                    {salvar.isPending ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : null}
-                    Salvar Rascunho
-                  </Button>
-                  <Button
-                    disabled={disableActions || !texto.trim()}
-                    onClick={() => salvar.mutate({ id: correcao?.id, texto, status: 'ENVIADA' })}
-                    className="w-full"
-                  >
-                    {salvar.isPending ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : null}
-                    Enviar ao Aluno
-                  </Button>
-                </div>
+              <Separator />
+
+              {/* Actions */}
+              <div className="flex flex-col gap-2">
+                <Button
+                  variant="outline"
+                  disabled={disableActions || !texto.trim()}
+                  onClick={() => salvar.mutate({ id: correcao?.id, texto, status: 'RASCUNHO' })}
+                  className="w-full"
+                >
+                  {salvar.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  Salvar Rascunho
+                </Button>
+                <Button
+                  disabled={disableActions || !texto.trim()}
+                  onClick={() => salvar.mutate({ id: correcao?.id, texto, status: 'ENVIADA' })}
+                  className="w-full"
+                >
+                  {salvar.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  Enviar ao Aluno
+                </Button>
               </div>
             </div>
           </div>
