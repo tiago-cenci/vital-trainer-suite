@@ -13,7 +13,8 @@ import {
   Weight,
   Ruler,
   Target,
-  CreditCard
+  CreditCard,
+  TrendingUp
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -32,9 +33,10 @@ interface AlunoCardProps {
   onEdit: () => void;
   onDelete: () => void;
   onViewSubscriptions: () => void;
+  onViewEvolution?: () => void;
 }
 
-export function AlunoCard({ aluno, onEdit, onDelete, onViewSubscriptions }: AlunoCardProps) {
+export function AlunoCard({ aluno, onEdit, onDelete, onViewSubscriptions, onViewEvolution }: AlunoCardProps) {
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -101,6 +103,12 @@ export function AlunoCard({ aluno, onEdit, onDelete, onViewSubscriptions }: Alun
                 <CreditCard className="h-4 w-4 mr-2" />
                 Assinaturas
               </DropdownMenuItem>
+              {onViewEvolution && (
+                <DropdownMenuItem onClick={onViewEvolution}>
+                  <TrendingUp className="h-4 w-4 mr-2" />
+                  Evolução
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem onClick={onDelete} className="text-destructive">
                 <Trash2 className="h-4 w-4 mr-2" />
                 Excluir
