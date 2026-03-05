@@ -155,6 +155,7 @@ export default function Alunos() {
                 onEdit={() => handleEdit(aluno)}
                 onDelete={() => setDeletingAluno(aluno)}
                 onViewSubscriptions={() => setAssinaturasAluno(aluno)}
+                onViewEvolution={() => setDetailAluno(aluno)}
               />
             ))}
           </div>
@@ -210,6 +211,16 @@ export default function Alunos() {
             onOpenChange={(open) => !open && setAssinaturasAluno(null)}
           />
         )}
+
+        {/* Evolução Modal */}
+        <Dialog open={!!detailAluno} onOpenChange={(open) => !open && setDetailAluno(null)}>
+          <DialogContent className="max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Evolução — {detailAluno?.nome}</DialogTitle>
+            </DialogHeader>
+            {detailAluno && <EvolucaoChart alunoId={detailAluno.id} />}
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );
