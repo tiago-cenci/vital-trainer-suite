@@ -11,7 +11,9 @@ import { ptBR } from 'date-fns/locale';
 
 import { useExecucao, useCorrecaoAtual, useSalvarCorrecao, useUploadMidiaCorrecao, useMidiasCorrecao, useDeleteMidiaCorrecao } from '@/hooks/useCorrecao';
 import { useExecVideoUrl } from '@/hooks/useExecVideoUrl';
+import { useExercicioFromExec, useMediaNotaExercicio } from '@/hooks/useCorrecaoExtra';
 import { MidiaThumb } from './MidiaThumb';
+import { StarRating, StarRatingDisplay } from '@/components/ui/star-rating';
 
 interface CorrecaoModalProps {
   execId?: string | null;
@@ -31,17 +33,21 @@ export function CorrecaoModal({
   const { data: correcao, isLoading: loadingCorr } = useCorrecaoAtual(execId || '');
   const { data: videoUrl, isLoading: loadingVideo } = useExecVideoUrl(exec?.video_path);
   const { data: midias = [] } = useMidiasCorrecao(correcao?.id);
+  const { data: exercicio } = useExercicioFromExec(execId);
+  const { data: mediaNota } = useMediaNotaExercicio(execId);
 
   const salvar = useSalvarCorrecao(execId || '');
   const upload = useUploadMidiaCorrecao(correcao?.id);
   const deleteMidia = useDeleteMidiaCorrecao(correcao?.id);
 
   const [texto, setTexto] = useState<string>('');
+  const [nota, setNota] = useState<number | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setTexto(correcao?.texto ?? '');
+    setNota(correcao?.pontuacao_opcional ?? null);
   }, [correcao?.id, execId]);
 
   const disableActions = salvar.isPending || upload.isPending || loadingExec || loadingCorr;
@@ -61,6 +67,10 @@ export function CorrecaoModal({
     });
   };
 
+  const handleSave = (status: 'RASCUNHO' | 'ENVIADA') => {
+    salvar.mutate({ id: correcao?.id, texto, status, pontuacao: nota });
+  };
+
   const statusBadge = !correcao 
     ? <Badge variant="outline">Nova correção</Badge>
     : correcao.status === 'ENVIADA' 
@@ -74,12 +84,20 @@ export function CorrecaoModal({
         <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 border-b flex-shrink-0">
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="space-y-1">
-              <DialogTitle className="text-lg sm:text-2xl font-bold">Correção de Execução</DialogTitle>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <DialogTitle className="text-lg sm:text-2xl font-bold">
+                {exercicio?.nome ?? 'Correção de Execução'}
+              </DialogTitle>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
                 {totalVideos > 1 && (
                   <span className="font-medium">Vídeo {currentIndex + 1} de {totalVideos}</span>
                 )}
                 {statusBadge}
+                {mediaNota !== null && mediaNota !== undefined && (
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs">Média:</span>
+                    <StarRatingDisplay value={mediaNota} size="sm" />
+                  </div>
+                )}
               </div>
             </div>
             {totalVideos > 1 && (
@@ -145,8 +163,19 @@ export function CorrecaoModal({
               </div>
             </div>
 
-            {/* RIGHT: feedback + upload + media */}
+            {/* RIGHT: feedback + rating + upload + media */}
             <div className="lg:col-span-2 p-4 sm:p-6 space-y-4 border-t lg:border-t-0">
+              {/* Star Rating */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">Nota da Execução</Label>
+                <StarRating value={nota} onChange={setNota} size="lg" showLabel />
+                <p className="text-xs text-muted-foreground">
+                  Opcional. Clique na mesma estrela para remover a nota.
+                </p>
+              </div>
+
+              <Separator />
+
               {/* Feedback text */}
               <div className="space-y-2">
                 <Label className="text-sm font-semibold">Feedback da Correção *</Label>
@@ -154,7 +183,7 @@ export function CorrecaoModal({
                   value={texto}
                   onChange={(e) => setTexto(e.target.value)}
                   placeholder="Explique pontos de postura, técnica, amplitude, respiração, carga, tempo de descanso, etc."
-                  rows={8}
+                  rows={6}
                   className="resize-none"
                 />
                 <p className="text-xs text-muted-foreground">
@@ -216,7 +245,7 @@ export function CorrecaoModal({
                 <Button
                   variant="outline"
                   disabled={disableActions || !texto.trim()}
-                  onClick={() => salvar.mutate({ id: correcao?.id, texto, status: 'RASCUNHO' })}
+                  onClick={() => handleSave('RASCUNHO')}
                   className="w-full"
                 >
                   {salvar.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
@@ -224,7 +253,7 @@ export function CorrecaoModal({
                 </Button>
                 <Button
                   disabled={disableActions || !texto.trim()}
-                  onClick={() => salvar.mutate({ id: correcao?.id, texto, status: 'ENVIADA' })}
+                  onClick={() => handleSave('ENVIADA')}
                   className="w-full"
                 >
                   {salvar.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
