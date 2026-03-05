@@ -93,7 +93,7 @@ export function useSalvarCorrecao(execId: string) {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async (payload: { id?: string; texto: string; status: CorrecaoStatus }) => {
+    mutationFn: async (payload: { id?: string; texto: string; status: CorrecaoStatus; pontuacao?: number | null }) => {
       if (!user) throw new Error('Usuário não autenticado');
 
       const base: CorrecaoInsert = {
@@ -101,6 +101,7 @@ export function useSalvarCorrecao(execId: string) {
         personal_user_id: user.id,
         texto: payload.texto,
         status: payload.status,
+        pontuacao_opcional: payload.pontuacao ?? null,
       };
 
       if (!payload.id) {
@@ -112,7 +113,7 @@ export function useSalvarCorrecao(execId: string) {
         if (error) throw error;
         return data as Correcao;
       } else {
-        const upd: CorrecaoUpdate = { texto: payload.texto, status: payload.status };
+        const upd: CorrecaoUpdate = { texto: payload.texto, status: payload.status, pontuacao_opcional: payload.pontuacao ?? null };
         const { data, error } = await supabase
           .from('correcoes')
           .update(upd)
