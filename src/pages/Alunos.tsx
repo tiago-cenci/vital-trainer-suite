@@ -10,6 +10,7 @@ import { useAlunos } from '@/hooks/useAlunos';
 import { AlunoCard } from '@/components/alunos/AlunoCard';
 import { AlunoForm } from '@/components/alunos/AlunoForm';
 import { AssinaturasModal } from '@/components/alunos/AssinaturasModal';
+import { EvolucaoChart } from '@/components/alunos/EvolucaoChart';
 import type { Tables } from '@/integrations/supabase/types';
 
 type Aluno = Tables<'alunos'>;
@@ -21,7 +22,7 @@ export default function Alunos() {
   const [editingAluno, setEditingAluno] = useState<Aluno | null>(null);
   const [deletingAluno, setDeletingAluno] = useState<Aluno | null>(null);
   const [assinaturasAluno, setAssinaturasAluno] = useState<Aluno | null>(null);
-
+  const [detailAluno, setDetailAluno] = useState<Aluno | null>(null);
   const {
     alunos,
     loading,
@@ -154,6 +155,7 @@ export default function Alunos() {
                 onEdit={() => handleEdit(aluno)}
                 onDelete={() => setDeletingAluno(aluno)}
                 onViewSubscriptions={() => setAssinaturasAluno(aluno)}
+                onViewEvolution={() => setDetailAluno(aluno)}
               />
             ))}
           </div>
@@ -209,6 +211,16 @@ export default function Alunos() {
             onOpenChange={(open) => !open && setAssinaturasAluno(null)}
           />
         )}
+
+        {/* Evolução Modal */}
+        <Dialog open={!!detailAluno} onOpenChange={(open) => !open && setDetailAluno(null)}>
+          <DialogContent className="max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Evolução — {detailAluno?.nome}</DialogTitle>
+            </DialogHeader>
+            {detailAluno && <EvolucaoChart alunoId={detailAluno.id} />}
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );
