@@ -12,8 +12,8 @@ import { Search, Users, Film, ChevronDown, ChevronUp, Calendar } from 'lucide-re
 import { useCorrecoesList, type CorrecoesFilters, type CorrecaoRow } from '@/hooks/useCorrecoesList';
 import { useAlunos } from '@/hooks/useAlunos';
 import { CorrecaoModal } from '@/components/correcoes/CorrecaoModal';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+// 🔧 FIX: substituído date-fns (sem suporte a timezone) pelo utilitário BRT
+import { toDateKeyBRT, formatDateKeyLabel } from '@/utils/dateUtils';
 
 const ALL = '__ALL__';
 
@@ -56,10 +56,12 @@ export default function Correcoes() {
     }
 
     return Object.entries(byAluno).map(([alunoNome, items]) => {
-      // Agrupar por data
+      // Agrupar por data — usando toDateKeyBRT para respeitar fuso BRT
+      // 🔧 FIX: era format(new Date(item.data), 'yyyy-MM-dd') — sem timezone,
+      // causava agrupamento no dia errado para vídeos enviados após 21h BRT.
       const byDate: Record<string, CorrecaoRow[]> = {};
       items.forEach((item) => {
-        const date = item.data ? format(new Date(item.data), 'yyyy-MM-dd') : 'sem-data';
+        const date = toDateKeyBRT(item.data);
         if (!byDate[date]) byDate[date] = [];
         byDate[date].push(item);
       });
@@ -67,10 +69,11 @@ export default function Correcoes() {
       const dates: GroupedByDate[] = Object.entries(byDate)
         .map(([date, dateItems]) => ({
           date,
-          dateLabel: date === 'sem-data' 
-            ? 'Sem data' 
-            : format(new Date(date), "d 'de' MMMM", { locale: ptBR }),
-          items: dateItems.sort((a, b) => 
+          // 🔧 FIX: era format(new Date(date), "d 'de' MMMM", { locale: ptBR })
+          // que reinterpretava a string YYYY-MM-DD sem timezone, causando off-by-one.
+          // Agora formatDateKeyLabel trata a chave como data local BRT.
+          dateLabel: formatDateKeyLabel(date),
+          items: dateItems.sort((a, b) =>
             (a.data || '').localeCompare(b.data || '')
           ),
         }))
@@ -109,8 +112,8 @@ export default function Correcoes() {
 
   const handlePrev = () => {
     if (!modalData) return;
-    const prevIndex = modalData.currentIndex === 0 
-      ? modalData.execIds.length - 1 
+    const prevIndex = modalData.currentIndex === 0
+      ? modalData.execIds.length - 1
       : modalData.currentIndex - 1;
     setModalData({ ...modalData, currentIndex: prevIndex });
   };
