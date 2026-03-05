@@ -10,6 +10,7 @@ import { useAlunos } from '@/hooks/useAlunos';
 import { AlunoCard } from '@/components/alunos/AlunoCard';
 import { AlunoForm } from '@/components/alunos/AlunoForm';
 import { AssinaturasModal } from '@/components/alunos/AssinaturasModal';
+import { EvolucaoChart } from '@/components/alunos/EvolucaoChart';
 import type { Tables } from '@/integrations/supabase/types';
 
 type Aluno = Tables<'alunos'>;
@@ -21,7 +22,7 @@ export default function Alunos() {
   const [editingAluno, setEditingAluno] = useState<Aluno | null>(null);
   const [deletingAluno, setDeletingAluno] = useState<Aluno | null>(null);
   const [assinaturasAluno, setAssinaturasAluno] = useState<Aluno | null>(null);
-
+  const [detailAluno, setDetailAluno] = useState<Aluno | null>(null);
   const {
     alunos,
     loading,
