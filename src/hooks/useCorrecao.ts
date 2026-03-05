@@ -127,6 +127,8 @@ export function useSalvarCorrecao(execId: string) {
     onSuccess: (data, vars) => {
       qc.invalidateQueries({ queryKey: ['correcoes:list'] });
       qc.invalidateQueries({ queryKey: ['correcao:atual', execId] });
+      qc.invalidateQueries({ queryKey: ['correcao:media-nota', execId] });
+      qc.invalidateQueries({ queryKey: ['evolucao:aluno'] });
       toast({
         title: vars.status === 'ENVIADA' ? 'Correção enviada' : 'Rascunho salvo',
         description: vars.status === 'ENVIADA'
