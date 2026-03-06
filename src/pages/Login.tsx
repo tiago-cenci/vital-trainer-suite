@@ -121,7 +121,7 @@ export default function Login() {
           )}
         </Button>
 
-        <div className="text-center">
+        {/* <div className="text-center">
           <span className="text-muted-foreground">Não tem uma conta? </span>
           <Link
             to="/register"
@@ -129,7 +129,7 @@ export default function Login() {
           >
             Cadastre-se
           </Link>
-        </div>
+        </div> */}
       </form>
     </AuthLayout>
   );
