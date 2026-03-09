@@ -48,9 +48,20 @@ export function useAlunos(filters: AlunoFilters = {}) {
     mutationFn: async (aluno: Omit<AlunoInsert, 'user_id'>) => {
       if (!user) throw new Error('Usuário não autenticado');
 
+      // Clean empty strings to null for numeric/date fields
+      const cleaned = {
+        ...aluno,
+        user_id: user.id,
+        peso: aluno.peso || null,
+        altura: aluno.altura || null,
+        data_nascimento: aluno.data_nascimento || null,
+        objetivo: aluno.objetivo || null,
+        observacoes: aluno.observacoes || null,
+      };
+
       const { data, error } = await supabase
         .from('alunos')
-        .insert({ ...aluno, user_id: user.id })
+        .insert(cleaned)
         .select()
         .single();
 
@@ -59,14 +70,15 @@ export function useAlunos(filters: AlunoFilters = {}) {
       // Send invite if email is provided
       if (data.email) {
         try {
-          const { error: inviteError } = await supabase.functions.invoke('invite_aluno', {
+          const res = await supabase.functions.invoke('invite_aluno', {
             body: { email: data.email, alunoId: data.id },
           });
-          if (inviteError) {
-            console.error('Erro ao enviar convite:', inviteError);
+          if (res.error || res.data?.error) {
+            const msg = res.data?.error || res.error?.message || 'Erro desconhecido';
+            console.error('Erro ao enviar convite:', msg);
             toast({
               title: 'Aluno criado',
-              description: 'Aluno criado, mas houve um erro ao enviar o convite por email.',
+              description: `Aluno criado, mas houve um erro ao enviar o convite: ${msg}`,
               variant: 'destructive',
             });
             return data;

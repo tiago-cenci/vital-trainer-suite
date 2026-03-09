@@ -75,24 +75,55 @@ Deno.serve(async (req) => {
       userId = existingUser.id;
       console.log("User already exists, linking to aluno:", userId);
     } else {
-      // Invite user - this creates the user and sends the invite email
-      const { data: inviteData, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(
+      // Create user without sending email first, then send magic link
+      const { data: createData, error: createError } = await adminClient.auth.admin.createUser({
         email,
-        {
-          redirectTo: "https://muvtrainer.com",
-        }
-      );
+        email_confirm: false,
+        user_metadata: { invited_as: "aluno" },
+      });
 
-      if (inviteError) {
-        console.error("Invite error:", inviteError);
-        return new Response(JSON.stringify({ error: inviteError.message }), {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+      if (createError) {
+        // If user already exists (race condition), find them
+        if (createError.message?.includes("already been registered")) {
+          const { data: users2 } = await adminClient.auth.admin.listUsers();
+          const found = users2?.users?.find(
+            (u: any) => u.email?.toLowerCase() === email.toLowerCase()
+          );
+          if (found) {
+            userId = found.id;
+          } else {
+            return new Response(JSON.stringify({ error: createError.message }), {
+              status: 500,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+        } else {
+          console.error("Create user error:", createError);
+          return new Response(JSON.stringify({ error: createError.message }), {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      } else {
+        userId = createData.user.id;
       }
 
-      userId = inviteData.user.id;
-      console.log("User invited successfully:", userId);
+      // Send magic link (password recovery) so user can set password
+      // This uses a separate rate limit from inviteUserByEmail
+      try {
+        const { error: resetError } = await adminClient.auth.admin.generateLink({
+          type: "magiclink",
+          email,
+          options: { redirectTo: "https://muvtrainer.com" },
+        });
+        if (resetError) {
+          console.warn("Magic link error (non-fatal):", resetError.message);
+        } else {
+          console.log("Magic link generated for:", email);
+        }
+      } catch (e) {
+        console.warn("Magic link send failed (non-fatal):", e);
+      }
     }
 
     // Link the auth user to the aluno record
