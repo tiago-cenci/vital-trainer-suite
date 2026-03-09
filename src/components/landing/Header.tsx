@@ -50,9 +50,12 @@ export function Header() {
 
           {/* Ação única: Login */}
           <div className="hidden md:flex items-center gap-3">
+            <Button size="sm" className="bg-black gap-2">
+              <a target='blank' href="http://muvtrainer-athlete.lovable.app">Entrar como aluno</a>
+            </Button>
             <Link to="/auth">
               <Button size="sm" className="fitness-button gap-2">
-                Entrar na plataforma
+                Entrar como personal
               </Button>
             </Link>
           </div>
