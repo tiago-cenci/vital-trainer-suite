@@ -6,13 +6,47 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+const MAX_RETRIES = 3;
+const INITIAL_BACKOFF_MS = 2000;
+
+async function inviteWithRetry(adminClient: any, email: string) {
+  let lastError: any = null;
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    const { data, error } = await adminClient.auth.admin.inviteUserByEmail(
+      email,
+      {
+        redirectTo: "https://muvtrainer.com",
+        data: { invited_as: "aluno" },
+      }
+    );
+
+    if (!error) {
+      return { data, error: null };
+    }
+
+    lastError = error;
+
+    // Only retry on rate limit errors
+    if (error.status === 429 || error.message?.includes("rate limit")) {
+      const delay = INITIAL_BACKOFF_MS * Math.pow(2, attempt);
+      console.warn(`Rate limit hit, retrying in ${delay}ms (attempt ${attempt + 1}/${MAX_RETRIES})`);
+      await new Promise((r) => setTimeout(r, delay));
+      continue;
+    }
+
+    // Non-rate-limit error, don't retry
+    return { data: null, error };
+  }
+
+  return { data: null, error: lastError };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Verify the caller is authenticated
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -24,7 +58,6 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // Verify caller with anon client
     const anonClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -44,7 +77,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Admin client to create/invite user
     const adminClient = createClient(supabaseUrl, serviceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
@@ -70,30 +102,45 @@ Deno.serve(async (req) => {
     );
 
     let userId: string;
+    let emailSent = false;
 
     if (existingUser) {
       userId = existingUser.id;
       console.log("User already exists, linking to aluno:", userId);
     } else {
-      // inviteUserByEmail creates the user AND sends the invite email
-      const { data: inviteData, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(
-        email,
-        {
-          redirectTo: "https://muvtrainer.com",
-          data: { invited_as: "aluno" },
-        }
-      );
+      // Invite with retry + backoff
+      const { data: inviteData, error: inviteError } = await inviteWithRetry(adminClient, email);
 
       if (inviteError) {
-        console.error("Invite error:", inviteError);
-        return new Response(JSON.stringify({ error: inviteError.message }), {
-          status: inviteError.status === 429 ? 429 : 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
+        console.error("Invite error after retries:", inviteError);
 
-      userId = inviteData.user.id;
-      console.log("User invited successfully:", userId);
+        // Even if invite fails, try to create user without email
+        const { data: createData, error: createError } = await adminClient.auth.admin.createUser({
+          email,
+          email_confirm: false,
+          user_metadata: { invited_as: "aluno" },
+        });
+
+        if (createError) {
+          return new Response(
+            JSON.stringify({
+              error: `Não foi possível convidar o aluno. ${inviteError.message}`,
+              rateLimited: true,
+            }),
+            {
+              status: 429,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            }
+          );
+        }
+
+        userId = createData.user.id;
+        console.log("User created without email (rate limited):", userId);
+      } else {
+        userId = inviteData.user.id;
+        emailSent = true;
+        console.log("User invited successfully:", userId);
+      }
     }
 
     // Link the auth user to the aluno record
@@ -111,7 +158,12 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, userId, isExisting: !!existingUser }),
+      JSON.stringify({
+        success: true,
+        userId,
+        emailSent,
+        isExisting: !!existingUser,
+      }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
