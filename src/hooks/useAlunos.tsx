@@ -73,30 +73,35 @@ export function useAlunos(filters: AlunoFilters = {}) {
           const res = await supabase.functions.invoke('invite_aluno', {
             body: { email: data.email, alunoId: data.id },
           });
-          if (res.error || res.data?.error) {
-            const msg = res.data?.error || res.error?.message || 'Erro desconhecido';
+          const resData = res.data;
+          if (res.error || resData?.error) {
+            const msg = resData?.error || res.error?.message || 'Erro desconhecido';
+            const isRateLimited = resData?.rateLimited || msg.includes('rate limit');
             console.error('Erro ao enviar convite:', msg);
             toast({
               title: 'Aluno criado',
-              description: `Aluno criado, mas houve um erro ao enviar o convite: ${msg}`,
-              variant: 'destructive',
+              description: isRateLimited
+                ? 'Aluno criado e vinculado, mas o convite por email será enviado depois (limite de envios atingido).'
+                : `Aluno criado, mas houve um erro ao enviar o convite: ${msg}`,
+              variant: isRateLimited ? 'default' : 'destructive',
             });
-            return data;
+            return { ...data, _emailSent: false };
           }
+          return { ...data, _emailSent: resData?.emailSent ?? true };
         } catch (e) {
           console.error('Erro ao enviar convite:', e);
+          return { ...data, _emailSent: false };
         }
       }
 
       return data;
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['alunos'] });
+      if (!data?.email || data?._emailSent === false) return; // already toasted
       toast({
         title: 'Sucesso!',
-        description: data?.email
-          ? 'Aluno criado e convite enviado por email.'
-          : 'Aluno criado com sucesso.',
+        description: 'Aluno criado e convite enviado por email.',
       });
     },
     onError: (error) => {
