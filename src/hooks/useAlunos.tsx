@@ -48,20 +48,60 @@ export function useAlunos(filters: AlunoFilters = {}) {
     mutationFn: async (aluno: Omit<AlunoInsert, 'user_id'>) => {
       if (!user) throw new Error('Usuário não autenticado');
 
+      // Clean empty strings to null for numeric/date fields
+      const cleaned = {
+        ...aluno,
+        user_id: user.id,
+        peso: aluno.peso || null,
+        altura: aluno.altura || null,
+        data_nascimento: aluno.data_nascimento || null,
+        objetivo: aluno.objetivo || null,
+        observacoes: aluno.observacoes || null,
+      };
+
       const { data, error } = await supabase
         .from('alunos')
-        .insert({ ...aluno, user_id: user.id })
+        .insert(cleaned)
         .select()
         .single();
 
       if (error) throw error;
+
+      // Send invite if email is provided
+      if (data.email) {
+        try {
+          const res = await supabase.functions.invoke('invite_aluno', {
+            body: { email: data.email, alunoId: data.id },
+          });
+          const resData = res.data;
+          if (res.error || resData?.error) {
+            const msg = resData?.error || res.error?.message || 'Erro desconhecido';
+            const isRateLimited = resData?.rateLimited || msg.includes('rate limit');
+            console.error('Erro ao enviar convite:', msg);
+            toast({
+              title: 'Aluno criado',
+              description: isRateLimited
+                ? 'Aluno criado e vinculado, mas o convite por email será enviado depois (limite de envios atingido).'
+                : `Aluno criado, mas houve um erro ao enviar o convite: ${msg}`,
+              variant: isRateLimited ? 'default' : 'destructive',
+            });
+            return { ...data, _emailSent: false };
+          }
+          return { ...data, _emailSent: resData?.emailSent ?? true };
+        } catch (e) {
+          console.error('Erro ao enviar convite:', e);
+          return { ...data, _emailSent: false };
+        }
+      }
+
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['alunos'] });
+      if (!data?.email || data?._emailSent === false) return; // already toasted
       toast({
         title: 'Sucesso!',
-        description: 'Aluno criado com sucesso.',
+        description: 'Aluno criado e convite enviado por email.',
       });
     },
     onError: (error) => {

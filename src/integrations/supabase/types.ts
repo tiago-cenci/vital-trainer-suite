@@ -953,20 +953,6 @@ export type Database = {
           id: string | null
           valor: number | null
         }
-        Insert: {
-          aluno_id?: string | null
-          data_inicio?: string | null
-          data_vencimento?: string | null
-          id?: string | null
-          valor?: number | null
-        }
-        Update: {
-          aluno_id?: string | null
-          data_inicio?: string | null
-          data_vencimento?: string | null
-          id?: string | null
-          valor?: number | null
-        }
         Relationships: [
           {
             foreignKeyName: "assinaturas_aluno_id_fkey"

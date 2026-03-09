@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, Dumbbell, ClipboardList, TrendingUp, Plus, Calendar, Target, Cloud } from 'lucide-react';
+import { Users, Dumbbell, ClipboardList, Target, Cloud, BarChart3, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
@@ -53,12 +53,6 @@ function secToHourLabel(sec?: number) {
   return `${h} h`;
 }
 
-// Tipos das views (leve) + client relaxado para views
-type VwMrr = { mrr: number; arpu: number; alunos_com_assinatura: number };
-type VwExecSem = { semana: string; semana_dt: string; execucoes: number };
-type VwCorrStatus = { status: string; qtd: number };
-type VwMedia = { provider: string; gb_total: number; avg_duracao_seg: number | null };
-type VwTopEx = { id: string; nome: string; execucoes: number };
 const sb = supabase as any;
 
 export default function Dashboard() {
@@ -76,7 +70,6 @@ export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // === Google Drive OAuth ===
   const handleConnectDrive = () => {
     if (!user) return;
     const p = new URLSearchParams({
@@ -103,7 +96,6 @@ export default function Dashboard() {
           gdrive_root_folder_id: storageSettings?.gdrive_root_folder_id ?? null,
         });
       if (error) throw error;
-
       setStorageSettings((prev) =>
         prev ? { ...prev, provider: 'gdrive' } : { user_id: user.id, provider: 'gdrive', gdrive_root_folder_id: null }
       );
@@ -114,26 +106,16 @@ export default function Dashboard() {
     }
   }, [user, storageSettings]);
 
-  // === Fetch Views/Stats ===
   const fetchInsights = async (): Promise<Insights> => {
-    const [
-      mrrRes,
-      ativosRes,
-      kpiRes,
-      semRes,
-      corrRes,
-      slaRes,
-      mediaRes,
-      topRes,
-    ] = await Promise.all([
-      sb.from('vw_mrr').select('*').single() as Promise<{ data: VwMrr | null }>,
-      sb.from('vw_alunos_ativos').select('aluno_id', { count: 'exact', head: true }) as Promise<{ count: number }>,
-      sb.from('vw_execucao_kpis').select('*').single() as Promise<{ data: { adesao_pct: number; duracao_media_seg: number } | null }>,
-      sb.from('vw_execucoes_semana').select('*').order('semana_dt', { ascending: true }) as Promise<{ data: VwExecSem[] }>,
-      sb.from('vw_correcoes_status').select('*') as Promise<{ data: VwCorrStatus[] }>,
-      sb.from('vw_correcoes_sla').select('*').single() as Promise<{ data: { sla_medio_seg: number } | null }>,
-      sb.from('vw_media_usage').select('*') as Promise<{ data: VwMedia[] }>,
-      sb.from('vw_top_exercicios').select('*') as Promise<{ data: VwTopEx[] }>,
+    const [mrrRes, ativosRes, kpiRes, semRes, corrRes, slaRes, mediaRes, topRes] = await Promise.all([
+      sb.from('vw_mrr').select('*').single(),
+      sb.from('vw_alunos_ativos').select('aluno_id', { count: 'exact', head: true }),
+      sb.from('vw_execucao_kpis').select('*').single(),
+      sb.from('vw_execucoes_semana').select('*').order('semana_dt', { ascending: true }),
+      sb.from('vw_correcoes_status').select('*'),
+      sb.from('vw_correcoes_sla').select('*').single(),
+      sb.from('vw_media_usage').select('*'),
+      sb.from('vw_top_exercicios').select('*'),
     ]);
 
     return {
@@ -156,14 +138,7 @@ export default function Dashboard() {
 
     const fetchAll = async () => {
       try {
-        const [
-          alunosRes,
-          exerciciosRes,
-          treinosRes,
-          treinosAtivosRes,
-          storageRes,
-          insightsRes,
-        ] = await Promise.all([
+        const [alunosRes, exerciciosRes, treinosRes, treinosAtivosRes, storageRes, insightsRes] = await Promise.all([
           supabase.from('alunos').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
           supabase.from('exercicios').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
           supabase.from('treinos').select('id', { count: 'exact', head: true }),
@@ -191,7 +166,6 @@ export default function Dashboard() {
     fetchAll();
   }, [user]);
 
-  // === UI ===
   const quickActions = [
     { title: 'Adicionar Aluno', description: 'Cadastrar novo aluno', icon: Users, action: () => navigate('/alunos') },
     { title: 'Criar Treino', description: 'Montar novo treino', icon: ClipboardList, action: () => navigate('/treinos') },
@@ -201,6 +175,44 @@ export default function Dashboard() {
 
   const providerLabel = storageSettings?.provider === 'gdrive' ? 'Google Drive (ativo)' : 'Supabase (ativo)';
 
+  const isEmpty = stats.totalAlunos === 0 && stats.totalExercicios === 0 && stats.totalTreinos === 0;
+
+  // === Empty State ===
+  const EmptyState = () => (
+    <div className="flex flex-col items-center justify-center py-16 space-y-6">
+      <div className="rounded-full bg-muted p-6">
+        <BarChart3 className="h-12 w-12 text-muted-foreground" />
+      </div>
+      <div className="text-center space-y-2 max-w-md">
+        <h2 className="text-2xl font-bold text-primary font-display">Bem-vindo ao MuvTrainer!</h2>
+        <p className="text-muted-foreground">
+          Seu dashboard ficará completo conforme você cadastrar alunos, exercícios e treinos. Comece agora!
+        </p>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 w-full max-w-3xl">
+        {quickActions.map((action) => (
+          <Card
+            key={action.title}
+            className="dashboard-card cursor-pointer hover:border-primary/50 transition-colors"
+            onClick={action.action}
+          >
+            <CardContent className="flex flex-col items-center gap-3 pt-6 text-center">
+              <div className="rounded-full bg-primary/10 p-3">
+                <action.icon className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <p className="font-semibold text-sm text-foreground">{action.title}</p>
+                <p className="text-xs text-muted-foreground">{action.description}</p>
+              </div>
+              <Plus className="h-4 w-4 text-muted-foreground" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+
+  // === KPI Row ===
   const KpiRow = ({ data }: { data: Insights }) => {
     const cards = [
       { label: 'MRR (R$)', value: data.mrr?.toFixed(2) },
@@ -285,81 +297,118 @@ export default function Dashboard() {
     <Card className="dashboard-card">
       <CardHeader><CardTitle className="text-primary">Top Exercícios (30d)</CardTitle></CardHeader>
       <CardContent>
-        <ul className="space-y-2">
-          {(data || []).map((r: any) => (
-            <li key={r.id} className="flex justify-between text-sm">
-              <span className="text-foreground">{r.nome}</span>
-              <span className="text-muted-foreground">{r.execucoes}</span>
-            </li>
-          ))}
-        </ul>
+        {data && data.length > 0 ? (
+          <ul className="space-y-2">
+            {data.map((r: any) => (
+              <li key={r.id} className="flex justify-between text-sm">
+                <span className="text-foreground">{r.nome}</span>
+                <span className="text-muted-foreground">{r.execucoes}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-muted-foreground">Nenhuma execução nos últimos 30 dias.</p>
+        )}
       </CardContent>
     </Card>
   );
 
+  if (loading) {
+    return (
+      <DashboardLayout breadcrumbs={[{ label: 'Dashboard' }]}>
+        <div className="flex items-center justify-center py-20">
+          <p className="text-muted-foreground">Carregando...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout breadcrumbs={[{ label: 'Dashboard' }]}>
       <div className="space-y-8">
-        {/* Welcome */}
         <div className="space-y-2 mb-8">
           <h1 className="text-4xl font-bold font-display tracking-tight text-primary">Dashboard</h1>
           <p className="text-muted-foreground text-lg">Gerencie sua plataforma de forma científica e profissional</p>
         </div>
 
-        {/* Storage / Drive */}
-        <Card className="dashboard-card">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Cloud className="h-5 w-5" />
-                Armazenamento de Mídia
-              </CardTitle>
-              <CardDescription>
-                Provider atual: <strong>{providerLabel}</strong>
-                {storageSettings?.gdrive_root_folder_id ? ' • Drive conectado' : ' • Drive não conectado'}
-              </CardDescription>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={handleConnectDrive}>
-                Conectar Google Drive
-              </Button>
-              <Button
-                onClick={handleUseDriveAsProvider}
-                disabled={savingProvider || !storageSettings?.gdrive_root_folder_id}
-              >
-                {savingProvider ? 'Salvando...' : 'Usar Google Drive'}
-              </Button>
-            </div>
-          </CardHeader>
-        </Card>
-
-        {/* KPIs estratégicos */}
-        {insights && <KpiRow data={insights} />}
-
-        {/* Gráficos principais + SLA */}
-        {insights && (
+        {isEmpty ? (
+          <EmptyState />
+        ) : (
           <>
-            <div className="grid gap-6 md:grid-cols-2">
-              <ExecucoesSemana data={insights.execSemanais} />
-              <CorrecoesStatus data={insights.correcoesStatus} />
-            </div>
-
-            <div className="grid gap-6 md:grid-cols-2">
-              <MediaUsage data={insights.mediaUsage} />
-              <TopExercicios data={insights.topExercicios} />
-            </div>
-
+            {/* Storage / Drive */}
             <Card className="dashboard-card">
-              <CardHeader>
-                <CardTitle className="text-primary">SLA Médio de Correção</CardTitle>
-                <CardDescription>Tempo médio da execução até a primeira correção registrada</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-lg text-muted-foreground">
-                  {secToHourLabel(insights?.slaMedioSeg)} em média
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Cloud className="h-5 w-5" />
+                    Armazenamento de Mídia
+                  </CardTitle>
+                  <CardDescription>
+                    Provider atual: <strong>{providerLabel}</strong>
+                    {storageSettings?.gdrive_root_folder_id ? ' • Drive conectado' : ' • Drive não conectado'}
+                  </CardDescription>
                 </div>
-              </CardContent>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={handleConnectDrive}>
+                    Conectar Google Drive
+                  </Button>
+                  <Button
+                    onClick={handleUseDriveAsProvider}
+                    disabled={savingProvider || !storageSettings?.gdrive_root_folder_id}
+                  >
+                    {savingProvider ? 'Salvando...' : 'Usar Google Drive'}
+                  </Button>
+                </div>
+              </CardHeader>
             </Card>
+
+            {/* Stats cards */}
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+              {[
+                { label: 'Alunos', value: stats.totalAlunos, icon: Users },
+                { label: 'Exercícios', value: stats.totalExercicios, icon: Dumbbell },
+                { label: 'Treinos', value: stats.totalTreinos, icon: ClipboardList },
+                { label: 'Treinos Ativos', value: stats.treinosAtivos, icon: Target },
+              ].map((s) => (
+                <Card key={s.label} className="dashboard-card">
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-sm text-muted-foreground uppercase tracking-wide">{s.label}</CardTitle>
+                    <s.icon className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="stat-number">{s.value}</div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* KPIs estratégicos */}
+            {insights && <KpiRow data={insights} />}
+
+            {/* Gráficos */}
+            {insights && (
+              <>
+                <div className="grid gap-6 md:grid-cols-2">
+                  <ExecucoesSemana data={insights.execSemanais} />
+                  <CorrecoesStatus data={insights.correcoesStatus} />
+                </div>
+                <div className="grid gap-6 md:grid-cols-2">
+                  <MediaUsage data={insights.mediaUsage} />
+                  <TopExercicios data={insights.topExercicios} />
+                </div>
+                <Card className="dashboard-card">
+                  <CardHeader>
+                    <CardTitle className="text-primary">SLA Médio de Correção</CardTitle>
+                    <CardDescription>Tempo médio da execução até a primeira correção registrada</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-lg text-muted-foreground">
+                      {secToHourLabel(insights?.slaMedioSeg)} em média
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            )}
           </>
         )}
       </div>

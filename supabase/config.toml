@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.gdrive_proxy]
 verify_jwt = true
+
+[functions.invite_aluno]
+verify_jwt = false
