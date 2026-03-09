@@ -18,14 +18,14 @@ import Treinos from "./pages/Treinos";
 import Correcoes from "./pages/Correcoes";
 import Alongamentos from "./pages/Alongamentos";
 import AuthCallback from "./pages/AuthCallback";
-import Index from "./pages/Index";
 import { useGaPageview } from "./analytics/useGaPageview";
+import LandingPage from "./pages/LandingPage";
 
 const queryClient = new QueryClient();
 
 function AppRoutes() {
   const { user, loading } = useAuth();
-   useGaPageview(); 
+  useGaPageview();
 
   if (loading) {
     return (
@@ -41,8 +41,8 @@ function AppRoutes() {
   return (
     <Routes>
       {/* Landing page - always accessible */}
-      <Route path="/" element={<Index />} />
-      
+      <Route path="/" element={<LandingPage />} />
+
       {/* Auth routes - redirect to dashboard if already authenticated */}
       <Route
         path="/login"
@@ -90,13 +90,13 @@ function AppRoutes() {
       />
 
       <Route path="/treinos" element={<ProtectedRoute><Treinos /></ProtectedRoute>} />
-      
+
       {/* OAuth callback - must NOT be protected to allow Google redirect */}
       <Route path="/auth/callback" element={<AuthCallback />} />
 
       <Route path="/correcoes" element={<ProtectedRoute><Correcoes /></ProtectedRoute>} />
 
-      <Route path="/alongamentos" element={<ProtectedRoute><Alongamentos/></ProtectedRoute>} />
+      <Route path="/alongamentos" element={<ProtectedRoute><Alongamentos /></ProtectedRoute>} />
 
       <Route
         path="/periodizacoes"
