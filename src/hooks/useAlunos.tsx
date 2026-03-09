@@ -55,13 +55,36 @@ export function useAlunos(filters: AlunoFilters = {}) {
         .single();
 
       if (error) throw error;
+
+      // Send invite if email is provided
+      if (data.email) {
+        try {
+          const { error: inviteError } = await supabase.functions.invoke('invite_aluno', {
+            body: { email: data.email, alunoId: data.id },
+          });
+          if (inviteError) {
+            console.error('Erro ao enviar convite:', inviteError);
+            toast({
+              title: 'Aluno criado',
+              description: 'Aluno criado, mas houve um erro ao enviar o convite por email.',
+              variant: 'destructive',
+            });
+            return data;
+          }
+        } catch (e) {
+          console.error('Erro ao enviar convite:', e);
+        }
+      }
+
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['alunos'] });
       toast({
         title: 'Sucesso!',
-        description: 'Aluno criado com sucesso.',
+        description: data?.email
+          ? 'Aluno criado e convite enviado por email.'
+          : 'Aluno criado com sucesso.',
       });
     },
     onError: (error) => {
