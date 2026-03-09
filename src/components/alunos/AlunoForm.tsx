@@ -77,7 +77,7 @@ export function AlunoForm({ aluno, onSubmit, onCancel, isSubmitting = false }: A
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">Email *</Label>
                 <Input
                   id="email"
                   type="email"
