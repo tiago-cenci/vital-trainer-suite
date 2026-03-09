@@ -14,7 +14,7 @@ type Aluno = Tables<'alunos'>;
 
 const alunoSchema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório'),
-  email: z.string().email('Email inválido').optional().or(z.literal('')),
+  email: z.string().email('Email inválido').min(1, 'Email é obrigatório'),
   data_nascimento: z.string().optional(),
   peso: z.coerce.number().positive('Peso deve ser positivo').optional().or(z.literal('')),
   altura: z.coerce.number().positive('Altura deve ser positiva').optional().or(z.literal('')),
@@ -77,7 +77,7 @@ export function AlunoForm({ aluno, onSubmit, onCancel, isSubmitting = false }: A
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">Email *</Label>
                 <Input
                   id="email"
                   type="email"
