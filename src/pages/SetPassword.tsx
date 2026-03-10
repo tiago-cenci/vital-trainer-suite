@@ -156,11 +156,11 @@ export default function SetPassword() {
               return (
                 <div key={rule.id} className="flex items-center gap-2 text-sm">
                   {passes ? (
-                    <Check size={14} className="text-green-600 shrink-0" />
+                    <Check size={14} className="text-primary shrink-0" />
                   ) : (
                     <X size={14} className="text-destructive shrink-0" />
                   )}
-                  <span className={passes ? 'text-green-700' : 'text-muted-foreground'}>
+                  <span className={passes ? 'text-foreground' : 'text-muted-foreground'}>
                     {rule.label}
                   </span>
                 </div>
