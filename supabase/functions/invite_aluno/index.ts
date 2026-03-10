@@ -15,7 +15,7 @@ async function inviteWithRetry(adminClient: any, email: string) {
     const { data, error } = await adminClient.auth.admin.inviteUserByEmail(
       email,
       {
-        redirectTo: "https://muvtrainer.com",
+        redirectTo: "https://muvtrainer.com/set-password",
         data: { invited_as: "aluno" },
       }
     );

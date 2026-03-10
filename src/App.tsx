@@ -18,6 +18,7 @@ import Treinos from "./pages/Treinos";
 import Correcoes from "./pages/Correcoes";
 import Alongamentos from "./pages/Alongamentos";
 import AuthCallback from "./pages/AuthCallback";
+import SetPassword from "./pages/SetPassword";
 import { useGaPageview } from "./analytics/useGaPageview";
 import LandingPage from "./pages/LandingPage";
 
@@ -93,6 +94,9 @@ function AppRoutes() {
 
       {/* OAuth callback - must NOT be protected to allow Google redirect */}
       <Route path="/auth/callback" element={<AuthCallback />} />
+
+      {/* Set password for invited users - NOT protected, session comes from invite token */}
+      <Route path="/set-password" element={<SetPassword />} />
 
       <Route path="/correcoes" element={<ProtectedRoute><Correcoes /></ProtectedRoute>} />
 
