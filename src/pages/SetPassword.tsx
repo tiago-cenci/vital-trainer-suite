@@ -34,7 +34,7 @@ export default function SetPassword() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         // SIGNED_IN from an invite link means the user just confirmed
-        if (session && !session.user.user_metadata?.has_set_password) {
+      if (session && session.user.user_metadata?.invited_as === 'aluno' && !session.user.user_metadata?.has_set_password) {
           setAuthorized(true);
           setChecking(false);
         }
