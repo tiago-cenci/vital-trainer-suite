@@ -90,12 +90,3 @@ export function UserProfile() {
   );
 }
 
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={signOut} className="text-red-600 focus:text-red-600">
-          <LogOut className="mr-2 h-4 w-4" />
-          <span>Sair</span>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
