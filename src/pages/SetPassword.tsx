@@ -43,7 +43,7 @@ export default function SetPassword() {
 
     // Also check existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session && !session.user.user_metadata?.has_set_password) {
+      if (session && session.user.user_metadata?.invited_as === 'aluno' && !session.user.user_metadata?.has_set_password) {
         setAuthorized(true);
       } else if (session?.user.user_metadata?.has_set_password) {
         // Already set password, go to dashboard
