@@ -95,6 +95,9 @@ function AppRoutes() {
       {/* OAuth callback - must NOT be protected to allow Google redirect */}
       <Route path="/auth/callback" element={<AuthCallback />} />
 
+      {/* Set password for invited users - NOT protected, session comes from invite token */}
+      <Route path="/set-password" element={<SetPassword />} />
+
       <Route path="/correcoes" element={<ProtectedRoute><Correcoes /></ProtectedRoute>} />
 
       <Route path="/alongamentos" element={<ProtectedRoute><Alongamentos /></ProtectedRoute>} />
