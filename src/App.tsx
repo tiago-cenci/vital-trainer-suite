@@ -18,6 +18,7 @@ import Treinos from "./pages/Treinos";
 import Correcoes from "./pages/Correcoes";
 import Alongamentos from "./pages/Alongamentos";
 import AuthCallback from "./pages/AuthCallback";
+import SetPassword from "./pages/SetPassword";
 import { useGaPageview } from "./analytics/useGaPageview";
 import LandingPage from "./pages/LandingPage";
 
