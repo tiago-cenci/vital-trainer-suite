@@ -30,23 +30,19 @@ export default function SetPassword() {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Listen for the auth event from the invite link token exchange
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        // SIGNED_IN from an invite link means the user just confirmed
-      if (session && session.user.user_metadata?.invited_as === 'aluno' && !session.user.user_metadata?.has_set_password) {
+      (_event, session) => {
+        if (session && !session.user.user_metadata?.has_set_password) {
           setAuthorized(true);
           setChecking(false);
         }
       }
     );
 
-    // Also check existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session && session.user.user_metadata?.invited_as === 'aluno' && !session.user.user_metadata?.has_set_password) {
+      if (session && !session.user.user_metadata?.has_set_password) {
         setAuthorized(true);
       } else if (session?.user.user_metadata?.has_set_password) {
-        // Already set password, go to dashboard
         navigate('/dashboard', { replace: true });
         return;
       }
