@@ -27,10 +27,7 @@ export function UserProfile() {
     .toUpperCase()
     .slice(0, 2);
 
-  const needsPassword = !user.user_metadata?.has_set_password && (
-    user.user_metadata?.invited_as === 'aluno' || 
-    !user.user_metadata?.full_name
-  );
+  const needsPassword = user.user_metadata?.invited_as === 'aluno' && !user.user_metadata?.has_set_password;
 
   return (
     <DropdownMenu>
