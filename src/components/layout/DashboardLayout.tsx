@@ -2,6 +2,7 @@ import React from 'react';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { DashboardSidebar } from './DashboardSidebar';
 import { UserProfile } from './UserProfile';
+import { PasswordSetupDialog } from './PasswordSetupDialog';
 import {
   Breadcrumb,
   BreadcrumbItem,
