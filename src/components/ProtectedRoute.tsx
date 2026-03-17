@@ -26,5 +26,10 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  // Alunos convidados não devem acessar o painel do personal
+  if (user.user_metadata?.invited_as === 'aluno') {
+    return <Navigate to="/" replace />;
+  }
+
   return <>{children}</>;
 }

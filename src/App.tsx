@@ -47,19 +47,19 @@ function AppRoutes() {
       {/* Auth routes - redirect to dashboard if already authenticated */}
       <Route
         path="/login"
-        element={user ? <Navigate to="/dashboard" replace /> : <Login />}
+        element={user && user.user_metadata?.invited_as !== 'aluno' ? <Navigate to="/dashboard" replace /> : <Login />}
       />
       <Route
         path="/auth"
-        element={user ? <Navigate to="/dashboard" replace /> : <Login />}
+        element={user && user.user_metadata?.invited_as !== 'aluno' ? <Navigate to="/dashboard" replace /> : <Login />}
       />
       <Route
         path="/register"
-        element={user ? <Navigate to="/dashboard" replace /> : <Register />}
+        element={user && user.user_metadata?.invited_as !== 'aluno' ? <Navigate to="/dashboard" replace /> : <Register />}
       />
       <Route
         path="/forgot-password"
-        element={user ? <Navigate to="/dashboard" replace /> : <ForgotPassword />}
+        element={user && user.user_metadata?.invited_as !== 'aluno' ? <Navigate to="/dashboard" replace /> : <ForgotPassword />}
       />
 
       {/* Protected routes */}
