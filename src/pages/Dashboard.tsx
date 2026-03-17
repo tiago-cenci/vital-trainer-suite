@@ -395,10 +395,28 @@ export default function Dashboard() {
             </div>
 
             {/* KPIs estratégicos */}
-            {insights && <KpiRow data={insights} />}
+            {insightsLoading ? (
+              <div className="grid gap-6 md:grid-cols-3 lg:grid-cols-5">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Card key={i} className="dashboard-card">
+                    <CardHeader><Skeleton className="h-4 w-24" /></CardHeader>
+                    <CardContent><Skeleton className="h-8 w-16" /></CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : insights ? <KpiRow data={insights} /> : null}
 
             {/* Gráficos */}
-            {insights && (
+            {insightsLoading ? (
+              <div className="grid gap-6 md:grid-cols-2">
+                {Array.from({ length: 2 }).map((_, i) => (
+                  <Card key={i} className="dashboard-card">
+                    <CardHeader><Skeleton className="h-5 w-40" /></CardHeader>
+                    <CardContent><Skeleton className="h-64 w-full" /></CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : insights && (
               <>
                 <div className="grid gap-6 md:grid-cols-2">
                   <ExecucoesSemana data={insights.execSemanais} />
