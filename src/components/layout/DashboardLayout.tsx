@@ -69,6 +69,7 @@ export function DashboardLayout({ children, breadcrumbs = [] }: DashboardLayoutP
           </main>
         </div>
       </div>
+      <PasswordSetupDialog />
     </SidebarProvider>
   );
 }

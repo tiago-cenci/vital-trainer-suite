@@ -63,6 +63,7 @@ export default function Dashboard() {
     treinosAtivos: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [insightsLoading, setInsightsLoading] = useState(true);
   const [insights, setInsights] = useState<Insights | null>(null);
   const [storageSettings, setStorageSettings] = useState<StorageSettings>(null);
   const [savingProvider, setSavingProvider] = useState(false);
