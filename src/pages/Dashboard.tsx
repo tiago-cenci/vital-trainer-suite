@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Users, Dumbbell, ClipboardList, Target, Cloud, BarChart3, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -63,6 +64,7 @@ export default function Dashboard() {
     treinosAtivos: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [insightsLoading, setInsightsLoading] = useState(true);
   const [insights, setInsights] = useState<Insights | null>(null);
   const [storageSettings, setStorageSettings] = useState<StorageSettings>(null);
   const [savingProvider, setSavingProvider] = useState(false);
@@ -136,15 +138,15 @@ export default function Dashboard() {
   useEffect(() => {
     if (!user) return;
 
-    const fetchAll = async () => {
+    // Fast: load basic counts first for quick render
+    const fetchBasic = async () => {
       try {
-        const [alunosRes, exerciciosRes, treinosRes, treinosAtivosRes, storageRes, insightsRes] = await Promise.all([
+        const [alunosRes, exerciciosRes, treinosRes, treinosAtivosRes, storageRes] = await Promise.all([
           supabase.from('alunos').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
           supabase.from('exercicios').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
           supabase.from('treinos').select('id', { count: 'exact', head: true }),
           supabase.from('treinos').select('id', { count: 'exact', head: true }).eq('ativo', true),
           (supabase as any).from('storage_settings').select('*').eq('user_id', user.id).maybeSingle(),
-          fetchInsights(),
         ]);
 
         setStats({
@@ -153,17 +155,28 @@ export default function Dashboard() {
           totalTreinos: treinosRes.count || 0,
           treinosAtivos: treinosAtivosRes.count || 0,
         });
-
         setStorageSettings((storageRes as any).data as StorageSettings);
-        setInsights(insightsRes);
       } catch (error) {
-        console.error('Erro ao carregar dados:', error);
+        console.error('Erro ao carregar stats:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchAll();
+    // Slow: load insights in background
+    const fetchInsightsAsync = async () => {
+      try {
+        const insightsRes = await fetchInsights();
+        setInsights(insightsRes);
+      } catch (error) {
+        console.error('Erro ao carregar insights:', error);
+      } finally {
+        setInsightsLoading(false);
+      }
+    };
+
+    fetchBasic();
+    fetchInsightsAsync();
   }, [user]);
 
   const quickActions = [
@@ -383,10 +396,28 @@ export default function Dashboard() {
             </div>
 
             {/* KPIs estratégicos */}
-            {insights && <KpiRow data={insights} />}
+            {insightsLoading ? (
+              <div className="grid gap-6 md:grid-cols-3 lg:grid-cols-5">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Card key={i} className="dashboard-card">
+                    <CardHeader><Skeleton className="h-4 w-24" /></CardHeader>
+                    <CardContent><Skeleton className="h-8 w-16" /></CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : insights ? <KpiRow data={insights} /> : null}
 
             {/* Gráficos */}
-            {insights && (
+            {insightsLoading ? (
+              <div className="grid gap-6 md:grid-cols-2">
+                {Array.from({ length: 2 }).map((_, i) => (
+                  <Card key={i} className="dashboard-card">
+                    <CardHeader><Skeleton className="h-5 w-40" /></CardHeader>
+                    <CardContent><Skeleton className="h-64 w-full" /></CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : insights && (
               <>
                 <div className="grid gap-6 md:grid-cols-2">
                   <ExecucoesSemana data={insights.execSemanais} />
