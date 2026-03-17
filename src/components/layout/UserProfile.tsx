@@ -1,5 +1,6 @@
 import React from 'react';
-import { LogOut, Mail, Phone } from 'lucide-react';
+import { LogOut, Mail, Phone, KeyRound } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import {
   DropdownMenu,
@@ -14,6 +15,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 export function UserProfile() {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
 
   if (!user) return null;
 
@@ -25,16 +27,23 @@ export function UserProfile() {
     .toUpperCase()
     .slice(0, 2);
 
+  // Show password setup notification for any user who hasn't set their password yet
+  // (personal trainers created via Supabase admin invite)
+  const needsPassword = !user.user_metadata?.has_set_password;
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="flex items-center gap-2 h-auto p-2">
+        <Button variant="ghost" className="flex items-center gap-2 h-auto p-2 relative">
           <Avatar className="h-8 w-8">
             <AvatarFallback className="text-xs font-medium">
               {initials}
             </AvatarFallback>
           </Avatar>
           <span className="text-sm font-medium">{displayName}</span>
+          {needsPassword && (
+            <span className="absolute -top-0.5 -right-0.5 h-3 w-3 rounded-full bg-destructive animate-pulse" />
+          )}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64">
@@ -47,6 +56,19 @@ export function UserProfile() {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+
+        {needsPassword && (
+          <>
+            <DropdownMenuItem
+              onClick={() => navigate('/set-password')}
+              className="text-destructive focus:text-destructive font-medium"
+            >
+              <KeyRound className="mr-2 h-4 w-4" />
+              <span>Cadastrar senha</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        )}
         
         <DropdownMenuItem className="cursor-default">
           <Mail className="mr-2 h-4 w-4" />
