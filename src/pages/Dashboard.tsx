@@ -137,15 +137,15 @@ export default function Dashboard() {
   useEffect(() => {
     if (!user) return;
 
-    const fetchAll = async () => {
+    // Fast: load basic counts first for quick render
+    const fetchBasic = async () => {
       try {
-        const [alunosRes, exerciciosRes, treinosRes, treinosAtivosRes, storageRes, insightsRes] = await Promise.all([
+        const [alunosRes, exerciciosRes, treinosRes, treinosAtivosRes, storageRes] = await Promise.all([
           supabase.from('alunos').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
           supabase.from('exercicios').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
           supabase.from('treinos').select('id', { count: 'exact', head: true }),
           supabase.from('treinos').select('id', { count: 'exact', head: true }).eq('ativo', true),
           (supabase as any).from('storage_settings').select('*').eq('user_id', user.id).maybeSingle(),
-          fetchInsights(),
         ]);
 
         setStats({
@@ -154,17 +154,28 @@ export default function Dashboard() {
           totalTreinos: treinosRes.count || 0,
           treinosAtivos: treinosAtivosRes.count || 0,
         });
-
         setStorageSettings((storageRes as any).data as StorageSettings);
-        setInsights(insightsRes);
       } catch (error) {
-        console.error('Erro ao carregar dados:', error);
+        console.error('Erro ao carregar stats:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchAll();
+    // Slow: load insights in background
+    const fetchInsightsAsync = async () => {
+      try {
+        const insightsRes = await fetchInsights();
+        setInsights(insightsRes);
+      } catch (error) {
+        console.error('Erro ao carregar insights:', error);
+      } finally {
+        setInsightsLoading(false);
+      }
+    };
+
+    fetchBasic();
+    fetchInsightsAsync();
   }, [user]);
 
   const quickActions = [
