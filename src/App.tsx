@@ -17,6 +17,8 @@ import TiposMicrociclos from "./pages/TiposMicrociclos";
 import Treinos from "./pages/Treinos";
 import Correcoes from "./pages/Correcoes";
 import Alongamentos from "./pages/Alongamentos";
+import AlunoDetalhe from "./pages/AlunoDetalhe";
+import AnamneseConfig from "./pages/AnamneseConfig";
 import AuthCallback from "./pages/AuthCallback";
 import SetPassword from "./pages/SetPassword";
 import { useGaPageview } from "./analytics/useGaPageview";
@@ -80,6 +82,10 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
+
+      <Route path="/alunos/:id" element={<ProtectedRoute><AlunoDetalhe /></ProtectedRoute>} />
+
+      <Route path="/anamnese-config" element={<ProtectedRoute><AnamneseConfig /></ProtectedRoute>} />
 
       <Route
         path="/exercicios"
