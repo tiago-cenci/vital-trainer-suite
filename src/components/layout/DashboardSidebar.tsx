@@ -35,6 +35,7 @@ const menuItems = [
 const configItems = [
   { title: 'Periodizações', url: '/periodizacoes', icon: Target },
   { title: 'Tipos de Microciclos', url: '/tipos-microciclos', icon: Settings2 },
+  { title: 'Anamnese', url: '/anamnese-config', icon: FileText },
 ];
 
 export function DashboardSidebar() {

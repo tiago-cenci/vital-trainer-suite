@@ -83,6 +83,10 @@ function AppRoutes() {
         }
       />
 
+      <Route path="/alunos/:id" element={<ProtectedRoute><AlunoDetalhe /></ProtectedRoute>} />
+
+      <Route path="/anamnese-config" element={<ProtectedRoute><AnamneseConfig /></ProtectedRoute>} />
+
       <Route
         path="/exercicios"
         element={
