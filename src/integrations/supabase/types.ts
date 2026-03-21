@@ -130,6 +130,91 @@ export type Database = {
         }
         Relationships: []
       }
+      anamnese_campos: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          label: string
+          obrigatorio: boolean
+          opcoes: Json | null
+          ordem: number
+          tipo: Database["public"]["Enums"]["anamnese_tipo_campo"]
+          user_id: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          label: string
+          obrigatorio?: boolean
+          opcoes?: Json | null
+          ordem?: number
+          tipo?: Database["public"]["Enums"]["anamnese_tipo_campo"]
+          user_id: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          label?: string
+          obrigatorio?: boolean
+          opcoes?: Json | null
+          ordem?: number
+          tipo?: Database["public"]["Enums"]["anamnese_tipo_campo"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      anamnese_respostas: {
+        Row: {
+          aluno_id: string
+          campo_id: string
+          created_at: string
+          id: string
+          updated_at: string
+          valor: string | null
+        }
+        Insert: {
+          aluno_id: string
+          campo_id: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          valor?: string | null
+        }
+        Update: {
+          aluno_id?: string
+          campo_id?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          valor?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anamnese_respostas_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "anamnese_respostas_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "vw_alunos_ativos"
+            referencedColumns: ["aluno_id"]
+          },
+          {
+            foreignKeyName: "anamnese_respostas_campo_id_fkey"
+            columns: ["campo_id"]
+            isOneToOne: false
+            referencedRelation: "anamnese_campos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assinaturas: {
         Row: {
           aluno_id: string | null
@@ -1076,6 +1161,13 @@ export type Database = {
       show_trgm: { Args: { "": string }; Returns: string[] }
     }
     Enums: {
+      anamnese_tipo_campo:
+        | "text"
+        | "number"
+        | "date"
+        | "select"
+        | "textarea"
+        | "boolean"
       correcao_status: "RASCUNHO" | "ENVIADA"
       grupo_muscular:
         | "Peito"
@@ -1217,6 +1309,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      anamnese_tipo_campo: [
+        "text",
+        "number",
+        "date",
+        "select",
+        "textarea",
+        "boolean",
+      ],
       correcao_status: ["RASCUNHO", "ENVIADA"],
       grupo_muscular: [
         "Peito",
