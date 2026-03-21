@@ -600,7 +600,12 @@ const landingCSS = `
 
 /* Buttons */
 .muv-btn { display:inline-flex; align-items:center; justify-content:center; gap:9px; padding:14px 32px; font-family:'Josefin Sans',sans-serif; font-size:11px; font-weight:300; letter-spacing:.18em; text-transform:uppercase; cursor:pointer; border:none; transition:all .25s; white-space:nowrap; text-decoration:none; }
-.muv-btn-primary { background:var(--muv-cream); color:var(--muv-dark) }
+.muv-btn-primary {
+  background: var(--muv-cream);
+  color: var(--muv-dark);
+  font-weight: 400;        /* era 300 — aumenta legibilidade */
+  letter-spacing: .12em;  /* era .18em — menos espaçamento = glifos mais pesados */
+}
 .muv-btn-primary:hover { background:var(--muv-white); transform:translateY(-1px) }
 .muv-btn-outline { background:transparent; color:var(--muv-bege); border:1px solid var(--muv-bd-med) }
 .muv-btn-outline:hover { border-color:var(--muv-bege); color:var(--muv-cream) }
