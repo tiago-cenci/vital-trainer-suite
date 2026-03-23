@@ -198,7 +198,7 @@ export function useTreinos(filters: TreinoFilters = {}) {
     }) => {
       if (!user) throw new Error('Usuário não autenticado');
 
-      // Update treino
+      // 1. Update treino
       const { error: updateError } = await supabase
         .from('treinos')
         .update({
@@ -211,35 +211,67 @@ export function useTreinos(filters: TreinoFilters = {}) {
 
       if (updateError) throw updateError;
 
-      // Delete existing sessoes (cascade will delete exercicios and series)
-      const { error: deleteError } = await supabase
+      // 2. Get existing session IDs
+      const { data: existingSessoes } = await supabase
         .from('sessoes')
-        .delete()
+        .select('id')
         .eq('treino_id', data.id);
 
-      if (deleteError) throw deleteError;
+      const existingIds = new Set((existingSessoes || []).map(s => s.id));
+      const keepIds = new Set(data.sessoes.filter(s => s.id).map(s => s.id!));
 
-      // Create new sessoes and exercicios
+      // 3. Delete removed sessions (ones no longer in the list)
+      const toDelete = [...existingIds].filter(id => !keepIds.has(id));
+      for (const id of toDelete) {
+        // Try to delete; if it fails due to FK (executions exist), just leave it
+        await supabase.from('sessoes_exercicios').delete().eq('sessao_id', id);
+        await supabase.from('sessoes_alongamentos').delete().eq('sessao_id', id);
+        const { error } = await supabase.from('sessoes').delete().eq('id', id);
+        if (error) {
+          console.warn(`Could not delete session ${id}, likely has execution history. Skipping.`);
+        }
+      }
+
+      // 4. Upsert sessions
       for (const sessao of data.sessoes) {
-        const { data: novaSessao, error: sessaoError } = await supabase
-          .from('sessoes')
-          .insert({
-            treino_id: data.id,
-            nome: sessao.nome,
-            ordem: sessao.ordem
-          })
-          .select()
-          .single();
+        let sessaoId: string;
 
-        if (sessaoError) throw sessaoError;
+        if (sessao.id && existingIds.has(sessao.id)) {
+          // Update existing session
+          await supabase
+            .from('sessoes')
+            .update({ nome: sessao.nome, ordem: sessao.ordem })
+            .eq('id', sessao.id);
+          sessaoId = sessao.id;
 
-        // Create exercicios for this sessao
+          // Delete old exercicios for this session and recreate
+          await supabase
+            .from('sessoes_exercicios')
+            .delete()
+            .eq('sessao_id', sessaoId);
+        } else {
+          // Create new session
+          const { data: novaSessao, error: sessaoError } = await supabase
+            .from('sessoes')
+            .insert({
+              treino_id: data.id,
+              nome: sessao.nome,
+              ordem: sessao.ordem
+            })
+            .select()
+            .single();
+
+          if (sessaoError) throw sessaoError;
+          sessaoId = novaSessao.id;
+        }
+
+        // Create exercicios for this session
         if (sessao.exercicios && sessao.exercicios.length > 0) {
           for (const exercicio of sessao.exercicios) {
-            const { data: novoSessaoExercicio, error: exercicioError } = await supabase
+            const { data: novoSE, error: exercicioError } = await supabase
               .from('sessoes_exercicios')
               .insert({
-                sessao_id: novaSessao.id,
+                sessao_id: sessaoId,
                 exercicio_id: exercicio.exercicio_id,
                 ordem: exercicio.ordem,
                 prescricao_tipo: exercicio.prescricao_tipo,
@@ -254,10 +286,9 @@ export function useTreinos(filters: TreinoFilters = {}) {
 
             if (exercicioError) throw exercicioError;
 
-            // Create series for this exercicio
             if (exercicio.series && exercicio.series.length > 0) {
               const seriesData = exercicio.series.map((serie: any) => ({
-                sessao_exercicio_id: novoSessaoExercicio.id,
+                sessao_exercicio_id: novoSE.id,
                 tipo: serie.tipo
               }));
 
