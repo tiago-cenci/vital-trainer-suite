@@ -1,3 +1,7 @@
+/**
+ * App.tsx — rotas atualizadas
+ * Parte 1+2: /treinos/novo e /treinos/:id/editar são páginas próprias
+ */
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -15,6 +19,7 @@ import Exercicios from "./pages/Exercicios";
 import Periodizacoes from "./pages/Periodizacoes";
 import TiposMicrociclos from "./pages/TiposMicrociclos";
 import Treinos from "./pages/Treinos";
+import TreinoFormPage from "./pages/TreinoFormPage";
 import Correcoes from "./pages/Correcoes";
 import Alongamentos from "./pages/Alongamentos";
 import AlunoDetalhe from "./pages/AlunoDetalhe";
@@ -43,10 +48,8 @@ function AppRoutes() {
 
   return (
     <Routes>
-      {/* Landing page - always accessible */}
       <Route path="/" element={<LandingPage />} />
 
-      {/* Auth routes - redirect to dashboard if already authenticated */}
       <Route
         path="/login"
         element={user && user.user_metadata?.invited_as !== 'aluno' ? <Navigate to="/dashboard" replace /> : <Login />}
@@ -64,90 +67,38 @@ function AppRoutes() {
         element={user && user.user_metadata?.invited_as !== 'aluno' ? <Navigate to="/dashboard" replace /> : <ForgotPassword />}
       />
 
-      {/* Protected routes */}
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/alunos"
-        element={
-          <ProtectedRoute>
-            <Alunos />
-          </ProtectedRoute>
-        }
-      />
-
+      <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/alunos" element={<ProtectedRoute><Alunos /></ProtectedRoute>} />
       <Route path="/alunos/:id" element={<ProtectedRoute><AlunoDetalhe /></ProtectedRoute>} />
-
       <Route path="/anamnese-config" element={<ProtectedRoute><AnamneseConfig /></ProtectedRoute>} />
+      <Route path="/exercicios" element={<ProtectedRoute><Exercicios /></ProtectedRoute>} />
 
-      <Route
-        path="/exercicios"
-        element={
-          <ProtectedRoute>
-            <Exercicios />
-          </ProtectedRoute>
-        }
-      />
-
+      {/* ── Treinos: lista + páginas de criação/edição ── */}
       <Route path="/treinos" element={<ProtectedRoute><Treinos /></ProtectedRoute>} />
-
-      {/* OAuth callback - must NOT be protected to allow Google redirect */}
-      <Route path="/auth/callback" element={<AuthCallback />} />
-
-      {/* Set password for invited users - NOT protected, session comes from invite token */}
-      <Route path="/set-password" element={<SetPassword />} />
+      <Route
+        path="/treinos/novo"
+        element={<ProtectedRoute><TreinoFormPage mode="criar" /></ProtectedRoute>}
+      />
+      <Route
+        path="/treinos/:id/editar"
+        element={<ProtectedRoute><TreinoFormPage mode="editar" /></ProtectedRoute>}
+      />
 
       <Route path="/correcoes" element={<ProtectedRoute><Correcoes /></ProtectedRoute>} />
-
       <Route path="/alongamentos" element={<ProtectedRoute><Alongamentos /></ProtectedRoute>} />
+      <Route path="/periodizacoes" element={<ProtectedRoute><Periodizacoes /></ProtectedRoute>} />
+      <Route path="/tipos-microciclos" element={<ProtectedRoute><TiposMicrociclos /></ProtectedRoute>} />
 
-      <Route
-        path="/periodizacoes"
-        element={
-          <ProtectedRoute>
-            <Periodizacoes />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/tipos-microciclos"
-        element={
-          <ProtectedRoute>
-            <TiposMicrociclos />
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/auth/callback" element={<AuthCallback />} />
+      <Route path="/set-password" element={<SetPassword />} />
 
       <Route
         path="/sessoes"
-        element={
-          <ProtectedRoute>
-            <div className="p-8 text-center">
-              <h1 className="text-2xl font-bold mb-4">Página de Sessões</h1>
-              <p className="text-muted-foreground">Em desenvolvimento</p>
-            </div>
-          </ProtectedRoute>
-        }
+        element={<ProtectedRoute><div className="p-8 text-center"><h1 className="text-2xl font-bold mb-4">Sessões</h1><p className="text-muted-foreground">Em desenvolvimento</p></div></ProtectedRoute>}
       />
-
       <Route
         path="/configuracoes"
-        element={
-          <ProtectedRoute>
-            <div className="p-8 text-center">
-              <h1 className="text-2xl font-bold mb-4">Configurações</h1>
-              <p className="text-muted-foreground">Em desenvolvimento</p>
-            </div>
-          </ProtectedRoute>
-        }
+        element={<ProtectedRoute><div className="p-8 text-center"><h1 className="text-2xl font-bold mb-4">Configurações</h1><p className="text-muted-foreground">Em desenvolvimento</p></div></ProtectedRoute>}
       />
 
       <Route path="*" element={<NotFound />} />
