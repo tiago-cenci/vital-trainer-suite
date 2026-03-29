@@ -92,6 +92,7 @@ export type Database = {
         Row: {
           altura: number | null
           aluno_user_id: string | null
+          anamnese_pendente: boolean
           created_at: string | null
           data_nascimento: string | null
           email: string | null
@@ -105,6 +106,7 @@ export type Database = {
         Insert: {
           altura?: number | null
           aluno_user_id?: string | null
+          anamnese_pendente?: boolean
           created_at?: string | null
           data_nascimento?: string | null
           email?: string | null
@@ -118,6 +120,7 @@ export type Database = {
         Update: {
           altura?: number | null
           aluno_user_id?: string | null
+          anamnese_pendente?: boolean
           created_at?: string | null
           data_nascimento?: string | null
           email?: string | null
@@ -1122,6 +1125,7 @@ export type Database = {
         Args: { p_sessao_id: string; p_tag_id: string }
         Returns: number
       }
+      aluno_concluir_anamnese: { Args: never; Returns: undefined }
       is_exec_do_aluno: { Args: { exec_id: string }; Returns: boolean }
       is_exec_do_meu_aluno: { Args: { exec_id: string }; Returns: boolean }
       listar_alongamentos_sessao: {
