@@ -1,11 +1,5 @@
 /**
- * useTreinos.tsx — atualizado para Parte 1 (séries detalhadas)
- *
- * Mudanças principais:
- * - createTreino / updateTreino agora salvam séries individuais com
- *   reps_min, reps_max, descanso_seg por linha
- * - Query carrega fields extras de series
- * - duplicarTreino também copia séries detalhadas
+ * useTreinos.tsx — atualizado com persistência destrutiva e dedup no carregamento
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -42,8 +36,6 @@ export interface TreinoCompleto extends Treino {
   })[];
 }
 
-// ─── Query de treinos ────────────────────────────────────────────────────────
-
 const TREINO_SELECT = `
   *,
   alunos (*),
@@ -58,50 +50,48 @@ const TREINO_SELECT = `
   )
 ` as const;
 
-// ─── Helpers de persistência ─────────────────────────────────────────────────
+// ─── Persistência destrutiva: deleta tudo e recria ─────────────────────────
 
-/**
- * Persiste as sessões de um treino (sessoes → sessoes_exercicios → series).
- * Apaga as séries antigas e recria — garantindo consistência.
- */
-async function persistirSessoes(
-  treinoId: string,
-  sessoes: SessaoLocal[],
-  sessaoIdsExistentes: Set<string> = new Set()
-) {
-  // 1. Remover sessões que sumiram do form
-  const keepIds = new Set(sessoes.filter(s => !s.id.startsWith('temp_')).map(s => s.id));
-  for (const existingId of sessaoIdsExistentes) {
-    if (!keepIds.has(existingId)) {
-      await supabase.from('sessoes_exercicios').delete().eq('sessao_id', existingId);
-      await supabase.from('sessoes').delete().eq('id', existingId);
+async function persistirSessoes(treinoId: string, sessoes: SessaoLocal[]) {
+  // 1. Buscar todas as sessões atuais para deletar
+  const { data: sessoesExistentes } = await supabase
+    .from('sessoes')
+    .select('id')
+    .eq('treino_id', treinoId);
+
+  if (sessoesExistentes && sessoesExistentes.length > 0) {
+    const ids = sessoesExistentes.map(s => s.id);
+
+    // Deletar séries de todos os exercícios dessas sessões
+    const { data: exercicios } = await supabase
+      .from('sessoes_exercicios')
+      .select('id')
+      .in('sessao_id', ids);
+    if (exercicios && exercicios.length > 0) {
+      const exercicioIds = exercicios.map(e => e.id);
+      await supabase.from('series').delete().in('sessao_exercicio_id', exercicioIds);
     }
+
+    // Deletar exercícios das sessões
+    await supabase.from('sessoes_exercicios').delete().in('sessao_id', ids);
+
+    // Deletar as sessões
+    await supabase.from('sessoes').delete().in('id', ids);
   }
 
-  // 2. Upsert cada sessão e seus exercícios + séries
+  // 2. Recriar tudo a partir do estado local
   for (const sessao of sessoes) {
-    let sessaoId: string;
+    const { data: novaSessao, error: errSessao } = await supabase
+      .from('sessoes')
+      .insert({ treino_id: treinoId, nome: sessao.nome, ordem: sessao.ordem })
+      .select('id')
+      .single();
+    if (errSessao) throw errSessao;
 
-    if (sessao.id.startsWith('temp_')) {
-      // Nova sessão
-      const { data, error } = await supabase
-        .from('sessoes')
-        .insert({ treino_id: treinoId, nome: sessao.nome, ordem: sessao.ordem })
-        .select('id')
-        .single();
-      if (error) throw error;
-      sessaoId = data.id;
-    } else {
-      // Atualizar sessão existente
-      await supabase.from('sessoes').update({ nome: sessao.nome, ordem: sessao.ordem }).eq('id', sessao.id);
-      sessaoId = sessao.id;
-      // Apagar exercícios antigos para recriar (mais simples que diff)
-      await supabase.from('sessoes_exercicios').delete().eq('sessao_id', sessaoId);
-    }
+    const sessaoId = novaSessao.id;
 
-    // 3. Criar exercícios + séries
     for (const ex of sessao.exercicios) {
-      const { data: seData, error: seError } = await supabase
+      const { data: novoEx, error: errEx } = await supabase
         .from('sessoes_exercicios')
         .insert({
           sessao_id: sessaoId,
@@ -109,7 +99,6 @@ async function persistirSessoes(
           ordem: ex.ordem,
           prescricao_tipo: ex.prescricao_tipo,
           usar_periodizacao: ex.usar_periodizacao,
-          // Legado — mantém para compatibilidade
           series_qtd: ex.series.length || null,
           reps_min: ex.series[0]?.reps_min ?? null,
           reps_max: ex.series[0]?.reps_max ?? null,
@@ -117,26 +106,25 @@ async function persistirSessoes(
         })
         .select('id')
         .single();
-      if (seError) throw seError;
+      if (errEx) throw errEx;
 
-      // 4. Criar séries individuais
       if (ex.series.length > 0) {
         const seriesData = ex.series.map((s, i) => ({
-          sessao_exercicio_id: seData.id,
+          sessao_exercicio_id: novoEx.id,
           tipo: s.tipo,
           ordem: s.ordem ?? i + 1,
           reps_min: s.reps_min,
           reps_max: s.reps_max,
           descanso_seg: s.descanso_seg,
         }));
-        const { error: seriesError } = await supabase.from('series').insert(seriesData);
-        if (seriesError) throw seriesError;
+        const { error: errSeries } = await supabase.from('series').insert(seriesData);
+        if (errSeries) throw errSeries;
       }
     }
   }
 }
 
-// ─── Hook principal ──────────────────────────────────────────────────────────
+// ─── Hook principal (mantido igual, apenas ajustando chamada) ───────────────
 
 export function useTreinos(filters: TreinoFilters = {}) {
   const { user } = useAuth();
@@ -146,7 +134,6 @@ export function useTreinos(filters: TreinoFilters = {}) {
     queryKey: ['treinos', user?.id, filters],
     queryFn: async (): Promise<TreinoCompleto[]> => {
       if (!user) throw new Error('Usuário não autenticado');
-
       let q = supabase
         .from('treinos')
         .select(TREINO_SELECT)
@@ -169,8 +156,7 @@ export function useTreinos(filters: TreinoFilters = {}) {
     enabled: !!user,
   });
 
-  // ─── Create ───────────────────────────────────────────────────────────────
-
+  // Create
   const createMutation = useMutation({
     mutationFn: async (data: {
       nome: string;
@@ -205,8 +191,7 @@ export function useTreinos(filters: TreinoFilters = {}) {
     onError: (e: any) => toast({ title: 'Erro ao criar treino', description: e.message, variant: 'destructive' }),
   });
 
-  // ─── Update ───────────────────────────────────────────────────────────────
-
+  // Update
   const updateMutation = useMutation({
     mutationFn: async (data: {
       id: string;
@@ -226,11 +211,7 @@ export function useTreinos(filters: TreinoFilters = {}) {
         periodizacao_id: data.periodizacao_id ?? null,
       }).eq('id', data.id);
 
-      // Pegar sessões existentes para limpar as removidas
-      const { data: existing } = await supabase.from('sessoes').select('id').eq('treino_id', data.id);
-      const existingIds = new Set((existing ?? []).map(s => s.id));
-
-      await persistirSessoes(data.id, data.sessoes, existingIds);
+      await persistirSessoes(data.id, data.sessoes);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['treinos'] });
@@ -239,8 +220,7 @@ export function useTreinos(filters: TreinoFilters = {}) {
     onError: (e: any) => toast({ title: 'Erro ao atualizar treino', description: e.message, variant: 'destructive' }),
   });
 
-  // ─── Ativar / Desativar ───────────────────────────────────────────────────
-
+  // Ativar / Desativar (mantido igual)
   const ativarMutation = useMutation({
     mutationFn: async (data: { id: string; aluno_id: string }) => {
       await supabase.from('treinos').update({ ativo: false }).eq('aluno_id', data.aluno_id);
@@ -264,8 +244,7 @@ export function useTreinos(filters: TreinoFilters = {}) {
     onError: (e: any) => toast({ title: 'Erro', description: e.message, variant: 'destructive' }),
   });
 
-  // ─── Delete ───────────────────────────────────────────────────────────────
-
+  // Delete
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from('treinos').delete().eq('id', id);
@@ -278,8 +257,7 @@ export function useTreinos(filters: TreinoFilters = {}) {
     onError: (e: any) => toast({ title: 'Erro ao excluir', description: e.message, variant: 'destructive' }),
   });
 
-  // ─── Duplicar ─────────────────────────────────────────────────────────────
-
+  // Duplicar (mantido igual)
   const duplicarMutation = useMutation({
     mutationFn: async (treino: TreinoCompleto) => {
       if (!user) throw new Error('Usuário não autenticado');

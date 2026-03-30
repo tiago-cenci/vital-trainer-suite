@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
-  ChevronDown, ChevronUp, GripVertical, Plus,
+  ChevronDown, ChevronUp, Plus,
 } from 'lucide-react';
 import {
   DndContext,
@@ -30,8 +30,6 @@ import { ExerciciosSeletor } from './ExerciciosSeletor';
 
 type Exercicio = Tables<'exercicios'>;
 
-// ─── Wrapper sortable ──────────────────────────────────────────────────────────
-
 interface SortableExercicioProps {
   exercicioLocal: ExercicioLocal;
   children: (dragHandleProps: React.HTMLAttributes<HTMLElement>) => React.ReactNode;
@@ -56,14 +54,12 @@ function SortableExercicio({ exercicioLocal, children }: SortableExercicioProps)
   );
 }
 
-// ─── SessaoBlock ───────────────────────────────────────────────────────────────
-
 interface SessaoBlockProps {
   sessao: SessaoLocal;
   todasSessoes: SessaoLocal[];
   allExercicios: Exercicio[];
   periodizacaoAtiva: boolean;
-  onChange: (sessao: SessaoLocal) => void;
+  onChange: (updated: SessaoLocal) => void;
   defaultOpen?: boolean;
 }
 
@@ -79,12 +75,10 @@ export function SessaoBlock({
   const [showSeletor, setShowSeletor] = useState(false);
 
   const sensors = useSensors(
-    useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 100, tolerance: 5 } }),
     useSensor(KeyboardSensor)
   );
-
-  // ─── Mutações de exercício ─────────────────────────────────────────────────
 
   const updateExercicio = useCallback((updated: ExercicioLocal) => {
     onChange({
@@ -108,14 +102,13 @@ export function SessaoBlock({
       sessao.exercicios.length + 1,
       periodizacaoAtiva
     );
-    onChange({ ...sessao, exercicios: [...sessao.exercicios, novo] });
-    setShowSeletor(false);
-    setOpen(true);
+    onChange({
+      ...sessao,
+      exercicios: [...sessao.exercicios, novo],
+    });
   }, [sessao, onChange, periodizacaoAtiva]);
 
-  // ─── Drag & Drop ───────────────────────────────────────────────────────────
-
-  function handleDragEnd(event: DragEndEvent) {
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
@@ -125,20 +118,14 @@ export function SessaoBlock({
       .map((e, i) => ({ ...e, ordem: i + 1 }));
 
     onChange({ ...sessao, exercicios: reordenados });
-  }
-
-  // ─── Ids já adicionados (para evitar duplicata no seletor) ───────────────
+  }, [sessao, onChange]);
 
   const idsJaAdicionados = sessao.exercicios.map(e => e.exercicio_id);
-
-  // ─── Resumo de séries da sessão ──────────────────────────────────────────
-
-  const totalSeries = sessao.exercicios.reduce((acc, e) => acc + e.series.length, 0);
+  const totalSeries = sessao.exercicios.reduce((acc, e) => acc + (e.series?.length ?? 0), 0);
 
   return (
     <>
       <Card className={cn('border-2 transition-all', open && 'border-primary/30')}>
-        {/* ── Cabeçalho da sessão ─────────────────────────────────────────────── */}
         <CardHeader
           className="py-4 px-5 cursor-pointer select-none"
           onClick={() => setOpen(o => !o)}
@@ -174,7 +161,6 @@ export function SessaoBlock({
           </div>
         </CardHeader>
 
-        {/* ── Lista de exercícios ─────────────────────────────────────────────── */}
         {open && (
           <CardContent className="pt-0 pb-5 px-5 space-y-3">
             {sessao.exercicios.length > 0 ? (
@@ -210,7 +196,6 @@ export function SessaoBlock({
               </div>
             )}
 
-            {/* Botão adicionar exercício */}
             <Button
               type="button"
               variant="outline"
@@ -224,7 +209,6 @@ export function SessaoBlock({
         )}
       </Card>
 
-      {/* Seletor de exercício */}
       <ExerciciosSeletor
         open={showSeletor}
         onOpenChange={setShowSeletor}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -37,7 +37,6 @@ import { SessaoBlock } from '@/components/treinos/SessaoBlock';
 import { cn } from '@/lib/utils';
 
 // ─── Schema de validação ──────────────────────────────────────────────────────
-
 const schema = z.object({
   nome: z.string().min(1, 'Nome é obrigatório'),
   aluno_id: z.string().min(1, 'Selecione um aluno'),
@@ -56,8 +55,6 @@ const schema = z.object({
 );
 
 type FormData = z.infer<typeof schema>;
-
-// ─── Componente ───────────────────────────────────────────────────────────────
 
 interface TreinoFormPageProps {
   mode: 'criar' | 'editar';
@@ -78,6 +75,8 @@ export default function TreinoFormPage({ mode }: TreinoFormPageProps) {
   const [sessoes, setSessoes] = useState<SessaoLocal[]>([]);
   const [showConfirmSair, setShowConfirmSair] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
+
+  const initialLoadDone = useRef(false);
 
   const {
     register,
@@ -107,10 +106,10 @@ export default function TreinoFormPage({ mode }: TreinoFormPageProps) {
     p => p.id === watchAll.periodizacao_id
   );
 
-  // ─── Carregar treino existente (modo editar) ──────────────────────────────
-
+  // ─── Carregar treino existente com deduplicação por exercicio_id ──────────────
   useEffect(() => {
-    if (mode !== 'editar' || !treinoExistente || (alunos.length === 0 && periodizacoes.length === 0)) return;
+    if (mode !== 'editar' || !treinoExistente || loadingExistente) return;
+    if (initialLoadDone.current) return;
 
     reset({
       nome: treinoExistente.nome,
@@ -123,28 +122,54 @@ export default function TreinoFormPage({ mode }: TreinoFormPageProps) {
       descricao_plano: (treinoExistente as any).descricao_plano ?? '',
     });
 
-    setSessoes(
-      (treinoExistente.sessoes ?? [])
-        .sort((a, b) => a.ordem - b.ordem)
-        .map(s => ({
+    const loadedSessoes = (treinoExistente.sessoes ?? [])
+      .sort((a, b) => a.ordem - b.ordem)
+      .map(s => {
+        // 🔥 Deduplicação: agrupa exercícios pelo mesmo exercicio_id (evita duplicatas)
+        const exerciciosMap = new Map<string, any>();
+        (s.sessoes_exercicios ?? [])
+          .sort((a, b) => a.ordem - b.ordem)
+          .forEach(se => {
+            const key = se.exercicio_id; // agrupa pelo ID do exercício
+            if (!exerciciosMap.has(key)) {
+              exerciciosMap.set(key, se);
+            } else {
+              // Se já existe, mantém o que tiver mais séries (ou simplesmente ignora o duplicado)
+              const existing = exerciciosMap.get(key);
+              const existingSeriesCount = existing.series?.length ?? 0;
+              const newSeriesCount = se.series?.length ?? 0;
+              if (newSeriesCount > existingSeriesCount) {
+                exerciciosMap.set(key, se);
+              }
+            }
+          });
+        const exercicios = Array.from(exerciciosMap.values()).map(se =>
+          dbToExercicioLocal({
+            ...se,
+            exercicio_id: se.exercicio_id ?? '',
+            series: (se.series as any[]) ?? [],
+          })
+        );
+        return {
           id: s.id,
           nome: s.nome,
           ordem: s.ordem,
-          exercicios: (s.sessoes_exercicios ?? [])
-            .sort((a, b) => a.ordem - b.ordem)
-            .map(se => dbToExercicioLocal({
-              ...se,
-              exercicio_id: se.exercicio_id ?? '',
-              series: (se.series as any[]) ?? [],
-            })),
-        }))
-    );
-  }, [treinoExistente, alunos.length, periodizacoes.length]);
+          exercicios,
+        };
+      });
 
-  // ─── Sincronizar número de sessões com o form ─────────────────────────────
+    setSessoes(loadedSessoes);
+    initialLoadDone.current = true;
+  }, [treinoExistente, loadingExistente, mode, reset]);
 
+  // ─── Reset do flag quando o ID mudar ─────────────────────────────────────────
   useEffect(() => {
-    if (mode === 'editar') return; // Não recria sessões ao editar
+    initialLoadDone.current = false;
+  }, [id]);
+
+  // ─── Sincronizar número de sessões com o form (apenas criação) ──────────────
+  useEffect(() => {
+    if (mode === 'editar') return;
     setSessoes(prev => {
       if (prev.length === sessoesSemanal) return prev;
       if (prev.length < sessoesSemanal) {
@@ -159,14 +184,12 @@ export default function TreinoFormPage({ mode }: TreinoFormPageProps) {
   }, [sessoesSemanal, mode]);
 
   // ─── Dirty tracking ───────────────────────────────────────────────────────
-
   const updateSessao = useCallback((updated: SessaoLocal) => {
     setSessoes(prev => prev.map(s => s.id === updated.id ? updated : s));
     setIsDirty(true);
   }, []);
 
   // ─── Submit ───────────────────────────────────────────────────────────────
-
   function onSubmit(data: FormData) {
     const payload = {
       nome: data.nome,
@@ -174,7 +197,6 @@ export default function TreinoFormPage({ mode }: TreinoFormPageProps) {
       sessoes_semanais: data.sessoes_semanais,
       periodizacao_id: data.usar_periodizacao ? (data.periodizacao_id ?? null) : null,
       usar_periodizacao: data.usar_periodizacao,
-      // Campos extras (Parte 2)
       data_inicio: data.data_inicio || undefined,
       data_vencimento: data.data_vencimento || undefined,
       descricao_plano: data.descricao_plano || undefined,
@@ -220,7 +242,7 @@ export default function TreinoFormPage({ mode }: TreinoFormPageProps) {
       ]}
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 pb-16">
-        {/* ── Topbar ────────────────────────────────────────────────────────── */}
+        {/* Topbar */}
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Button
@@ -254,7 +276,7 @@ export default function TreinoFormPage({ mode }: TreinoFormPageProps) {
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-[1fr_380px] gap-8 items-start">
-          {/* ── Coluna esquerda: sessões ──────────────────────────────────── */}
+          {/* Coluna esquerda: sessões */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold flex items-center gap-2">
@@ -292,10 +314,8 @@ export default function TreinoFormPage({ mode }: TreinoFormPageProps) {
             )}
           </div>
 
-          {/* ── Coluna direita: configurações ─────────────────────────────── */}
+          {/* Coluna direita: configurações */}
           <div className="space-y-5 xl:sticky xl:top-20">
-
-            {/* Informações gerais */}
             <Card>
               <CardHeader className="pb-4">
                 <CardTitle className="text-base flex items-center gap-2">
@@ -303,7 +323,6 @@ export default function TreinoFormPage({ mode }: TreinoFormPageProps) {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Nome */}
                 <div className="space-y-1.5">
                   <Label htmlFor="nome">Nome do treino *</Label>
                   <Input
@@ -315,7 +334,6 @@ export default function TreinoFormPage({ mode }: TreinoFormPageProps) {
                   {errors.nome && <p className="text-xs text-destructive">{errors.nome.message}</p>}
                 </div>
 
-                {/* Aluno */}
                 <div className="space-y-1.5">
                   <Label>Aluno *</Label>
                   <Select
@@ -334,7 +352,6 @@ export default function TreinoFormPage({ mode }: TreinoFormPageProps) {
                   {errors.aluno_id && <p className="text-xs text-destructive">{errors.aluno_id.message}</p>}
                 </div>
 
-                {/* Sessões semanais */}
                 <div className="space-y-1.5">
                   <Label>Sessões por semana *</Label>
                   <Select
@@ -356,7 +373,6 @@ export default function TreinoFormPage({ mode }: TreinoFormPageProps) {
               </CardContent>
             </Card>
 
-            {/* Datas e plano — Parte 2 */}
             <Card>
               <CardHeader className="pb-4">
                 <CardTitle className="text-base flex items-center gap-2">
@@ -408,7 +424,6 @@ export default function TreinoFormPage({ mode }: TreinoFormPageProps) {
               </CardContent>
             </Card>
 
-            {/* Periodização */}
             <Card>
               <CardHeader className="pb-4">
                 <CardTitle className="text-base flex items-center gap-2">
@@ -450,7 +465,6 @@ export default function TreinoFormPage({ mode }: TreinoFormPageProps) {
                       <p className="text-xs text-destructive">{errors.periodizacao_id.message}</p>
                     )}
 
-                    {/* Resumo da periodização selecionada */}
                     {periodizacaoSelecionada && (
                       <div className="p-3 bg-muted/50 rounded-lg text-xs space-y-1.5">
                         <p className="font-medium">{periodizacaoSelecionada.nome}</p>
@@ -478,7 +492,6 @@ export default function TreinoFormPage({ mode }: TreinoFormPageProps) {
               </CardContent>
             </Card>
 
-            {/* Botão salvar (redundante no mobile) */}
             <Button
               type="submit"
               disabled={isSubmitting}
@@ -491,7 +504,6 @@ export default function TreinoFormPage({ mode }: TreinoFormPageProps) {
         </div>
       </form>
 
-      {/* ── Confirm sair sem salvar ──────────────────────────────────────────── */}
       <AlertDialog open={showConfirmSair} onOpenChange={setShowConfirmSair}>
         <AlertDialogContent>
           <AlertDialogHeader>
