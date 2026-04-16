@@ -557,19 +557,31 @@ export type Database = {
       series: {
         Row: {
           created_at: string | null
+          descanso_seg: number | null
           id: string
+          ordem: number | null
+          reps_max: number | null
+          reps_min: number | null
           sessao_exercicio_id: string | null
           tipo: Database["public"]["Enums"]["tipo_serie"]
         }
         Insert: {
           created_at?: string | null
+          descanso_seg?: number | null
           id?: string
+          ordem?: number | null
+          reps_max?: number | null
+          reps_min?: number | null
           sessao_exercicio_id?: string | null
           tipo: Database["public"]["Enums"]["tipo_serie"]
         }
         Update: {
           created_at?: string | null
+          descanso_seg?: number | null
           id?: string
+          ordem?: number | null
+          reps_max?: number | null
+          reps_min?: number | null
           sessao_exercicio_id?: string | null
           tipo?: Database["public"]["Enums"]["tipo_serie"]
         }
@@ -914,11 +926,62 @@ export type Database = {
           },
         ]
       }
+      treino_semanas: {
+        Row: {
+          created_at: string
+          data_fim_semana: string | null
+          data_inicio_semana: string | null
+          id: string
+          override_manual: boolean
+          semana_num: number
+          tipo_microciclo_id: string | null
+          treino_id: string
+        }
+        Insert: {
+          created_at?: string
+          data_fim_semana?: string | null
+          data_inicio_semana?: string | null
+          id?: string
+          override_manual?: boolean
+          semana_num: number
+          tipo_microciclo_id?: string | null
+          treino_id: string
+        }
+        Update: {
+          created_at?: string
+          data_fim_semana?: string | null
+          data_inicio_semana?: string | null
+          id?: string
+          override_manual?: boolean
+          semana_num?: number
+          tipo_microciclo_id?: string | null
+          treino_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "treino_semanas_tipo_microciclo_id_fkey"
+            columns: ["tipo_microciclo_id"]
+            isOneToOne: false
+            referencedRelation: "tipos_microciclos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treino_semanas_treino_id_fkey"
+            columns: ["treino_id"]
+            isOneToOne: false
+            referencedRelation: "treinos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       treinos: {
         Row: {
           aluno_id: string | null
           ativo: boolean | null
           created_at: string | null
+          data_inicio: string | null
+          data_vencimento: string | null
+          descricao_plano: string | null
           id: string
           nome: string
           periodizacao_id: string | null
@@ -928,6 +991,9 @@ export type Database = {
           aluno_id?: string | null
           ativo?: boolean | null
           created_at?: string | null
+          data_inicio?: string | null
+          data_vencimento?: string | null
+          descricao_plano?: string | null
           id?: string
           nome: string
           periodizacao_id?: string | null
@@ -937,6 +1003,9 @@ export type Database = {
           aluno_id?: string | null
           ativo?: boolean | null
           created_at?: string | null
+          data_inicio?: string | null
+          data_vencimento?: string | null
+          descricao_plano?: string | null
           id?: string
           nome?: string
           periodizacao_id?: string | null
@@ -1119,6 +1188,39 @@ export type Database = {
         }
         Relationships: []
       }
+      vw_treino_semanas_config: {
+        Row: {
+          data_fim_semana: string | null
+          data_inicio_semana: string | null
+          descanso_max: number | null
+          descanso_min: number | null
+          id: string | null
+          microciclo_nome: string | null
+          override_manual: boolean | null
+          rep_max: number | null
+          rep_min: number | null
+          semana_num: number | null
+          tipo_microciclo_id: string | null
+          tipo_serie: Database["public"]["Enums"]["tipo_serie"] | null
+          treino_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "treino_semanas_tipo_microciclo_id_fkey"
+            columns: ["tipo_microciclo_id"]
+            isOneToOne: false
+            referencedRelation: "tipos_microciclos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treino_semanas_treino_id_fkey"
+            columns: ["treino_id"]
+            isOneToOne: false
+            referencedRelation: "treinos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       adicionar_alongamentos_por_tag: {
@@ -1126,6 +1228,24 @@ export type Database = {
         Returns: number
       }
       aluno_concluir_anamnese: { Args: never; Returns: undefined }
+      gerar_semanas_treino: {
+        Args: {
+          p_data_inicio: string
+          p_semanas_total?: number
+          p_treino_id: string
+        }
+        Returns: number
+      }
+      get_microciclo_ativo: {
+        Args: { p_treino_id: string }
+        Returns: {
+          data_fim_semana: string
+          data_inicio_semana: string
+          semana_num: number
+          tipo_microciclo_id: string
+          tipo_nome: string
+        }[]
+      }
       is_exec_do_aluno: { Args: { exec_id: string }; Returns: boolean }
       is_exec_do_meu_aluno: { Args: { exec_id: string }; Returns: boolean }
       listar_alongamentos_sessao: {
@@ -1182,6 +1302,10 @@ export type Database = {
         | "Perna"
         | "Abdômen"
         | "Glúteo"
+        | "Quadriceps"
+        | "Posterior de coxa"
+        | "Adutores"
+        | "Panturrilhas"
       midia_tipo: "FOTO" | "VIDEO"
       prescricao_tipo_enum: "DETALHADA" | "PERIODIZACAO"
       tipo_prescricao: "DETALHADA" | "SIMPLES"
@@ -1331,6 +1455,10 @@ export const Constants = {
         "Perna",
         "Abdômen",
         "Glúteo",
+        "Quadriceps",
+        "Posterior de coxa",
+        "Adutores",
+        "Panturrilhas",
       ],
       midia_tipo: ["FOTO", "VIDEO"],
       prescricao_tipo_enum: ["DETALHADA", "PERIODIZACAO"],
