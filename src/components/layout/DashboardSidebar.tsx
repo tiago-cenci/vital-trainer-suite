@@ -66,40 +66,39 @@ export function DashboardSidebar() {
       className="shrink-0 bg-sidebar text-sidebar border-r border-sidebar/20 sticky top-0 h-screen z-30 overflow-hidden"
     >
       {/* HEADER */}
-<SidebarHeader
-  className={
-    (collapsed ? 'h-16' : 'h-28') +
-    ' bg-sidebar border-b border-sidebar/30 flex items-center justify-center px-4'
-  }
->
-  {/* Logo aberta (wordmark) — fica montada sempre, só escondida quando colapsado */}
-  <div className={collapsed ? 'hidden' : 'flex flex-col items-center gap-1'}>
-    <img
-      src={wordmarkLogo}
-      alt="MUVTRAINER"
-      className="h-14 w-auto object-contain"
-      /* se o arquivo for escuro, ative: className += ' brightness-0 invert' */
-    />
-    <p className="text-[11px] leading-none text-sidebar/70 italic tracking-wide">
-      Ciência aplicada
-    </p>
-  </div>
+      <SidebarHeader
+        className={
+          (collapsed ? 'h-16' : 'h-28') +
+          ' bg-sidebar border-b border-sidebar/30 flex items-center justify-center px-4'
+        }
+      >
+        {/* Logo aberta (wordmark) — fica montada sempre, só escondida quando colapsado */}
+        <div className={collapsed ? 'hidden' : 'flex flex-col items-center gap-1'}>
+          <img
+            src={wordmarkLogo}
+            alt="MUVTRAINER"
+            className="h-14 w-auto object-contain"
+          /* se o arquivo for escuro, ative: className += ' brightness-0 invert' */
+          />
+          <p className="text-[11px] leading-none text-sidebar/70 italic tracking-wide">
+            Ciência aplicada
+          </p>
+        </div>
 
-  {/* Logo colapsada (ícone) — montada sempre, visível só quando colapsado */}
-  <div className={collapsed ? 'flex items-center justify-center' : 'hidden'}>
-    <img
-      src={iconLogo}
-      alt="MUVTRAINER"
-      className="h-9 w-9 object-contain"
-      /* se o ícone for escuro: 'brightness-0 invert' */
-    />
-  </div>
-</SidebarHeader>
+        {/* Logo colapsada (ícone) — montada sempre, visível só quando colapsado */}
+        <div className={collapsed ? 'flex items-center justify-center' : 'hidden'}>
+          <img
+            src={iconLogo}
+            alt="MUVTRAINER"
+            className="h-9 w-9 object-contain"
+          /* se o ícone for escuro: 'brightness-0 invert' */
+          />
+        </div>
+      </SidebarHeader>
 
 
       {/* MENU */}
-      <SidebarContent className="px-3 py-6 bg-sidebar overflow-visible">
-        {/* Menu Principal */}
+      <SidebarContent className="px-3 py-6 bg-sidebar overflow-y-auto hover:scrollbar">        {/* Menu Principal */}
         <SidebarGroup>
           <SidebarGroupLabel className={collapsed ? 'sr-only' : 'px-2 mb-3 text-xs uppercase tracking-wider font-semibold text-[hsl(var(--secondary))]'}>
             Menu Principal
