@@ -732,9 +732,9 @@ const css = `
 @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.65)} }
 
 /* ── Header — CORRIGIDO PARA MOBILE ── */
-.muv-hdr { position: fixed; inset-x: 0; top: 0; z-index: 999; height: var(--hh); background: var(--dk); border-bottom: 1px solid var(--bd2); transition: box-shadow .3s }
+.muv-hdr { position: fixed; left: 0; right: 0; top: 0; z-index: 999; height: var(--hh); background: var(--dk); border-bottom: 1px solid var(--bd2); transition: box-shadow .3s; max-width: 100vw }
 .muv-hdr.scrolled { box-shadow: 0 2px 24px rgba(0,0,0,.5) }
-.muv-hdr-in { height: 100%; max-width: 1100px; margin: 0 auto; padding: 0 20px; display: flex; align-items: center; gap: 16px }
+.muv-hdr-in { height: 100%; max-width: 100%; width: 100%; padding: 0 20px; display: flex; align-items: center; gap: 16px }
 .muv-logo { display: flex; align-items: center; flex-shrink: 0 }
 .muv-logo img { height: 1rem; width: auto }
 .muv-nav { display: flex; flex: 1; justify-content: center; gap: 4px }
