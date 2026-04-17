@@ -76,8 +76,8 @@ export default function Configuracoes() {
         </div>
 
         {successFlag === 'success' && (
-          <Alert className="border-green-500/40 bg-green-500/5">
-            <CheckCircle2 className="h-4 w-4 text-green-600" />
+          <Alert className="border-success/40 bg-success/5">
+            <CheckCircle2 className="h-4 w-4 text-success" />
             <AlertTitle>Google Drive conectado</AlertTitle>
             <AlertDescription className="flex items-center justify-between gap-4">
               <span>Sua conta foi vinculada com sucesso.</span>
@@ -127,7 +127,7 @@ export default function Configuracoes() {
                       {isLoading ? (
                         <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                       ) : isMediaConfigured ? (
-                        <Badge className="bg-green-600 hover:bg-green-700">Conectado</Badge>
+                        <Badge className="bg-success text-success-foreground hover:bg-success/90">Conectado</Badge>
                       ) : (
                         <Badge variant="outline">Desconectado</Badge>
                       )}
