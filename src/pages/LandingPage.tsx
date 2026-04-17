@@ -94,29 +94,29 @@ export default function LandingPage() {
 
     // FAQ accordion
     const faqData = [
-      { 
-        q: "Por que o acesso é por convite?", 
-        a: "Estamos validando o produto com um grupo pequeno de personais. Grupos menores = suporte melhor, feedback mais rápido, produto mais sólido antes de abrir pra todo mundo." 
+      {
+        q: "Por que o acesso é por convite?",
+        a: "Estamos validando o produto com um grupo pequeno de personais. Grupos menores = suporte melhor, feedback mais rápido, produto mais sólido antes de abrir pra todo mundo."
       },
-      { 
-        q: "O aluno pode se cadastrar sozinho?", 
-        a: "Não. Você cadastra os alunos pela plataforma web, e eles recebem um convite por email pra criar a conta no aplicativo." 
+      {
+        q: "O aluno pode se cadastrar sozinho?",
+        a: "Não. Você cadastra os alunos pela plataforma web, e eles recebem um convite por email pra criar a conta no aplicativo."
       },
-      { 
-        q: "Por que os vídeos ficam no meu Google Drive?", 
-        a: "Não queremos guardar vídeo na nossa infraestrutura — é caro, arriscado e você perde o controle. Você conecta o Drive uma vez só e a gente organiza tudo por aluno e exercício lá dentro." 
+      {
+        q: "Por que os vídeos ficam no meu Google Drive?",
+        a: "Não queremos guardar vídeo na nossa infraestrutura — é caro, arriscado e você perde o controle. Você conecta o Drive uma vez só e a gente organiza tudo por aluno e exercício lá dentro."
       },
-      { 
-        q: "É de graça? Por quanto tempo?", 
-        a: "100% gratuito durante o beta. Quando virar produto pago, você vai saber com pelo menos 30 dias de antecedência. Quem testar o beta ganha condições especiais no lançamento." 
+      {
+        q: "É de graça? Por quanto tempo?",
+        a: "100% gratuito durante o beta. Quando virar produto pago, você vai saber com pelo menos 30 dias de antecedência. Quem testar o beta ganha condições especiais no lançamento."
       },
-      { 
-        q: "E se eu encontrar problemas?", 
-        a: "Esperado — é beta. Tem canal de feedback direto na plataforma. Todo bug reportado vai pra cima da nossa fila de prioridades." 
+      {
+        q: "E se eu encontrar problemas?",
+        a: "Esperado — é beta. Tem canal de feedback direto na plataforma. Todo bug reportado vai pra cima da nossa fila de prioridades."
       },
-      { 
-        q: "Preciso saber de tecnologia pra usar?", 
-        a: "Não. Se você manda áudio pelo WhatsApp e usa o Instagram, você já sabe tudo que precisa. A plataforma é mais simples que isso." 
+      {
+        q: "Preciso saber de tecnologia pra usar?",
+        a: "Não. Se você manda áudio pelo WhatsApp e usa o Instagram, você já sabe tudo que precisa. A plataforma é mais simples que isso."
       },
     ];
 
@@ -205,9 +205,9 @@ export default function LandingPage() {
               <a href="https://muvtrainer-athlete.lovable.app" target="_blank" rel="noreferrer" className="muv-btn muv-btn-g">App do aluno</a>
               <a href="/auth" className="muv-btn muv-btn-p">Entrar</a>
             </div>
-            <button 
-              className="muv-mob-btn" 
-              onClick={toggleMobile} 
+            <button
+              className="muv-mob-btn"
+              onClick={toggleMobile}
               aria-label="Menu"
               aria-expanded={mobileOpen}
             >
@@ -248,13 +248,13 @@ export default function LandingPage() {
                   Beta fechado · Acesso por convite
                 </div>
                 <h1 className="muv-serif muv-hero-h1">
-                  Chega de perder aluno<br />
-                  por falta<br />
-                  <em className="muv-i muv-gold">de organização.</em>
+                  Plataforma<br />
+                  100% focada em<br />
+                  <em className="muv-i muv-gold">Consultoria Online</em>
                 </h1>
                 <div className="muv-rule" />
                 <p className="muv-hero-sub">
-                  Você atende bem. O problema é que com 30, 40, 50 alunos, o WhatsApp vira bagunça e você começa a perder qualidade — sem querer.
+                  Para personal trainers que buscam excelência no seu atendimento online escalando seu faturamento.
                 </p>
                 <div className="muv-hero-ctas">
                   <a href="/auth" className="muv-btn muv-btn-p">Entrar na plataforma</a>
@@ -266,7 +266,9 @@ export default function LandingPage() {
                 </a>
               </div>
               <div className="muv-hero-img">
-                <img src="https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=700&q=80" alt="Personal trainer orientando aluno" />
+                {/* <img src="https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=700&q=80" alt="Personal trainer orientando aluno" /> */}
+                <img src={imgCorrecoes} alt="Personal trainer orientando aluno" />
+                <img src="/" alt="Personal trainer orientando aluno" />
                 <div className="muv-hero-img-ov" />
                 <div className="muv-chip muv-chip-top">
                   <div className="muv-chip-ico">FILA</div>
@@ -278,8 +280,8 @@ export default function LandingPage() {
                 <div className="muv-chip muv-chip-bot">
                   <div className="muv-chip-ico">DRIVE</div>
                   <div>
-                    <div className="muv-chip-txt">Vídeos no seu Drive</div>
-                    <div className="muv-chip-sub">storage zero aqui</div>
+                    <div className="muv-chip-txt">Vídeos no sistema</div>
+                    <div className="muv-chip-sub">chega de WhatsApp</div>
                   </div>
                 </div>
               </div>
@@ -575,7 +577,7 @@ export default function LandingPage() {
             <div id="muv-wl-form">
               <div className="muv-wl-card">
                 <form onSubmit={handleWaitlist} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                  <div className="muv-form-row">
+                  {/* <div className="muv-form-row">
                     <div className="muv-fg"><label htmlFor="muv-nome">Nome</label><input id="muv-nome" type="text" placeholder="Seu nome" required /></div>
                     <div className="muv-fg"><label htmlFor="muv-email">Email</label><input id="muv-email" type="email" placeholder="seu@email.com" required /></div>
                   </div>
@@ -594,9 +596,9 @@ export default function LandingPage() {
                     <label htmlFor="muv-lgpd">
                       Concordo com a <a href="/privacidade">Política de Privacidade</a> e autorizo o MUV TRAINER a me contatar sobre o beta.
                     </label>
-                  </div>
+                  </div> */}
                   <button id="muv-submit" type="submit" className="muv-btn muv-btn-p muv-btn-full" style={{ height: 50 }}>
-                    Entrar na lista de espera
+                    <a href="https://w.app/muvtrainer">Entrar na lista de espera</a>
                   </button>
                   <p className="muv-form-note">Gratuito · Sem cartão · Sem compromisso</p>
                 </form>
