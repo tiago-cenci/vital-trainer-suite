@@ -2,8 +2,16 @@ import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import {
-  ChevronDown, ChevronUp, GripVertical, Plus,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  ChevronDown, ChevronUp, Plus, Trash2, Copy
 } from 'lucide-react';
 import {
   DndContext,
@@ -28,7 +36,6 @@ import type { Tables } from '@/integrations/supabase/types';
 import { ExercicioBlock } from './ExercicioBlock';
 import { ExerciciosSeletor } from './ExerciciosSeletor';
 import { AlongamentosSeletor } from './AlongamentosSeletor';
-import { Trash2, Copy } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 type Exercicio = Tables<'exercicios'>;
@@ -160,13 +167,6 @@ export function SessaoBlock({
       alongamentos: novosAlongs,
     };
 
-    // O onChange aqui é o da SessaoBlock, que atualiza UMA sessão.
-    // Mas precisamos atualizar a sessão de DESTINO.
-    // Como o TreinoFormPage passa o onChange que atualiza o estado global de sessoes,
-    // podemos usar o mesmo onChange se ele for inteligente o suficiente,
-    // ou precisaremos de uma prop onSessaoChange (que já existe em ExercicioBlock).
-    // No TreinoFormPage, o updateSessao faz: setSessoes(prev => prev.map(s => s.id === updated.id ? updated : s));
-    // Então chamar onChange(sessaoAtualizada) vai funcionar perfeitamente!
     onChange(sessaoAtualizada);
     toast({ title: `Alongamentos duplicados para Sessão ${destino.nome}` });
   }, [sessao, todasSessoes, onChange]);
@@ -304,48 +304,49 @@ export function SessaoBlock({
                 Exercícios
               </h3>
               {sessao.exercicios.length > 0 ? (
-              <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-                <SortableContext
-                  items={sessao.exercicios.map(e => e.id)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  <div className="space-y-2">
-                    {sessao.exercicios.map(ex => (
-                      <SortableExercicio key={ex.id} exercicioLocal={ex}>
-                        {(dragHandleProps) => (
-                          <ExercicioBlock
-                            exercicio={ex}
-                            allExercicios={allExercicios}
-                            sessaoAtual={sessao}
-                            todasSessoes={todasSessoes}
-                            periodizacaoAtiva={periodizacaoAtiva}
-                            onChange={updateExercicio}
-                            onRemove={() => removeExercicio(ex.id)}
-                            onSessaoChange={onChange}
-                            dragHandleProps={dragHandleProps}
-                          />
-                        )}
-                      </SortableExercicio>
-                    ))}
-                  </div>
-                </SortableContext>
-              </DndContext>
-            ) : (
-              <div className="text-center py-8 border border-dashed rounded-lg text-muted-foreground text-sm">
-                Nenhum exercício nesta sessão. Clique em "+ Exercício" para adicionar.
-              </div>
-            )}
+                <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+                  <SortableContext
+                    items={sessao.exercicios.map(e => e.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="space-y-2">
+                      {sessao.exercicios.map(ex => (
+                        <SortableExercicio key={ex.id} exercicioLocal={ex}>
+                          {(dragHandleProps) => (
+                            <ExercicioBlock
+                              exercicio={ex}
+                              allExercicios={allExercicios}
+                              sessaoAtual={sessao}
+                              todasSessoes={todasSessoes}
+                              periodizacaoAtiva={periodizacaoAtiva}
+                              onChange={updateExercicio}
+                              onRemove={() => removeExercicio(ex.id)}
+                              onSessaoChange={onChange}
+                              dragHandleProps={dragHandleProps}
+                            />
+                          )}
+                        </SortableExercicio>
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
+              ) : (
+                <div className="text-center py-8 border border-dashed rounded-lg text-muted-foreground text-sm">
+                  Nenhum exercício nesta sessão. Clique em "+ Exercício" para adicionar.
+                </div>
+              )}
 
-            {/* Botão adicionar exercício */}
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full gap-2 h-9 border-dashed text-muted-foreground hover:text-foreground"
-              onClick={() => setShowSeletor(true)}
-            >
-              <Plus className="h-4 w-4" />
-              Adicionar exercício
-            </Button>
+              {/* Botão adicionar exercício */}
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full gap-2 h-9 border-dashed text-muted-foreground hover:text-foreground"
+                onClick={() => setShowSeletor(true)}
+              >
+                <Plus className="h-4 w-4" />
+                Adicionar exercício
+              </Button>
+            </div>
           </CardContent>
         )}
       </Card>
