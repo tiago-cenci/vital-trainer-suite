@@ -273,3 +273,43 @@ export function CorrecaoModal({
     </Dialog>
   );
 }
+
+/**
+ * Bloqueia o upload quando o Google Drive não está conectado.
+ * Mostra um alerta com link para a página de configurações.
+ */
+function MediaUploadGuard({ children }: { children: React.ReactNode }) {
+  const { isMediaConfigured, isLoading } = useStorageProvider();
+
+  if (isLoading) {
+    return (
+      <div className="rounded-md border border-dashed p-3 text-xs text-muted-foreground flex items-center gap-2">
+        <Loader2 className="h-3 w-3 animate-spin" />
+        Verificando integração de mídia…
+      </div>
+    );
+  }
+
+  if (!isMediaConfigured) {
+    return (
+      <Alert>
+        <AlertTriangle className="h-4 w-4" />
+        <AlertTitle>Conecte o Google Drive</AlertTitle>
+        <AlertDescription className="space-y-2">
+          <p className="text-xs">
+            Para anexar fotos ou vídeos, conecte sua conta do Google Drive em
+            Configurações.
+          </p>
+          <Button asChild size="sm" variant="outline">
+            <Link to="/configuracoes">
+              <Cloud className="h-3.5 w-3.5 mr-2" />
+              Ir para Configurações
+            </Link>
+          </Button>
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  return <>{children}</>;
+}
