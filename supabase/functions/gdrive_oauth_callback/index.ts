@@ -5,6 +5,15 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const REDIRECT_BASE = 'https://muvtrainer.com/configuracoes';
+
+function redirect(url: string) {
+  return new Response(null, {
+    status: 302,
+    headers: { ...corsHeaders, 'Location': url },
+  });
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -14,47 +23,30 @@ serve(async (req) => {
     const url = new URL(req.url);
     const code = url.searchParams.get('code');
     const state = url.searchParams.get('state');
-    const debug = url.searchParams.get('debug');
 
     console.log('[gdrive_oauth_callback] Recebido code:', code ? 'SIM' : 'NÃO');
     console.log('[gdrive_oauth_callback] Recebido state:', state ? 'SIM' : 'NÃO');
 
     if (!code || !state) {
       console.error('[gdrive_oauth_callback] code ou state ausente');
-      return new Response(null, {
-        status: 302,
-        headers: {
-          ...corsHeaders,
-          'Location': 'https://muvtrainer.com/dashboard?error=missing_code'
-        }
-      });
+      return redirect(`${REDIRECT_BASE}?error=missing_code`);
     }
 
     const parsedState = JSON.parse(state);
     const userId = parsedState.user_id;
     console.log('[gdrive_oauth_callback] user_id extraído:', userId);
 
-    // Trocar code por tokens
     const clientId = Deno.env.get('gdrive_client_id');
     const clientSecret = Deno.env.get('gdrive_client_secret');
     const redirectUri = Deno.env.get('gdrive_redirect_uri');
 
     if (!clientId || !clientSecret || !redirectUri) {
-      console.error('[gdrive_oauth_callback] Secrets missing!', { clientId: !!clientId, clientSecret: !!clientSecret, redirectUri: !!redirectUri });
-      return new Response(null, {
-        status: 302,
-        headers: {
-          ...corsHeaders,
-          'Location': 'https://muvtrainer.com/dashboard?error=missing_secrets'
-        }
-      });
+      console.error('[gdrive_oauth_callback] Secrets missing!');
+      return redirect(`${REDIRECT_BASE}?error=missing_secrets`);
     }
 
-    console.log('[gdrive_oauth_callback] Using redirect_uri:', redirectUri);
-    console.log('[gdrive_oauth_callback] Using client_id suffix:', clientId?.slice(-8));
-
     console.log('[gdrive_oauth_callback] Trocando code por tokens...');
-    
+
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -70,13 +62,7 @@ serve(async (req) => {
     if (!tokenResponse.ok) {
       const errText = await tokenResponse.text();
       console.error('[gdrive_oauth_callback] Erro ao trocar code:', errText);
-      return new Response(null, {
-        status: 302,
-        headers: {
-          ...corsHeaders,
-          'Location': 'https://muvtrainer.com/dashboard?error=token_exchange_failed'
-        }
-      });
+      return redirect(`${REDIRECT_BASE}?error=token_exchange_failed`);
     }
 
     const tokens = await tokenResponse.json();
@@ -84,7 +70,21 @@ serve(async (req) => {
 
     const expiresAt = new Date(Date.now() + (tokens.expires_in * 1000)).toISOString();
 
-    // Usar Service Role Key para salvar tokens
+    // Buscar email do usuário Google
+    let userEmail: string | null = null;
+    try {
+      const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+        headers: { Authorization: `Bearer ${tokens.access_token}` },
+      });
+      if (userInfoRes.ok) {
+        const info = await userInfoRes.json();
+        userEmail = info?.email ?? null;
+        console.log('[gdrive_oauth_callback] Email obtido:', userEmail);
+      }
+    } catch (e) {
+      console.warn('[gdrive_oauth_callback] Falha ao buscar userinfo:', e);
+    }
+
     const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL')!,
@@ -108,71 +108,64 @@ serve(async (req) => {
 
     if (upsertError) {
       console.error('[gdrive_oauth_callback] Erro ao salvar tokens:', upsertError);
-      return new Response(null, {
-        status: 302,
+      return redirect(`${REDIRECT_BASE}?error=save_tokens_failed`);
+    }
+
+    console.log('[gdrive_oauth_callback] Tokens salvos. Verificando pasta raiz...');
+
+    // Verificar se já existe gdrive_root_folder_id; só cria se for necessário
+    const { data: existing } = await supabaseAdmin
+      .from('storage_settings')
+      .select('gdrive_root_folder_id')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    let folderId: string | null = existing?.gdrive_root_folder_id ?? null;
+
+    if (!folderId) {
+      const driveResponse = await fetch('https://www.googleapis.com/drive/v3/files', {
+        method: 'POST',
         headers: {
-          ...corsHeaders,
-          'Location': 'https://muvtrainer.com/dashboard?error=save_tokens_failed'
-        }
+          'Authorization': `Bearer ${tokens.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: 'MUVTRAINER',
+          mimeType: 'application/vnd.google-apps.folder'
+        })
       });
+
+      if (driveResponse.ok) {
+        const folder = await driveResponse.json();
+        folderId = folder.id;
+        console.log('[gdrive_oauth_callback] Pasta criada:', folderId);
+      } else {
+        console.error('[gdrive_oauth_callback] Erro ao criar pasta:', await driveResponse.text());
+      }
     }
 
-    console.log('[gdrive_oauth_callback] Tokens salvos. Criando pasta raiz no Drive...');
-
-    // Criar pasta raiz no Drive
-    const driveResponse = await fetch('https://www.googleapis.com/drive/v3/files', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${tokens.access_token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        name: 'MUVTRAINER',
-        mimeType: 'application/vnd.google-apps.folder'
-      })
-    });
-
-    if (!driveResponse.ok) {
-      console.error('[gdrive_oauth_callback] Erro ao criar pasta:', await driveResponse.text());
-    }
-
-    const folder = await driveResponse.json();
-    const folderId = folder.id;
-    console.log('[gdrive_oauth_callback] Pasta criada:', folderId);
-
-    // Salvar storage_settings
     const { error: settingsError } = await supabaseAdmin
       .from('storage_settings')
       .upsert({
         user_id: userId,
         provider: 'gdrive',
-        gdrive_root_folder_id: folderId
+        gdrive_root_folder_id: folderId,
+        gdrive_email: userEmail,
       }, {
         onConflict: 'user_id'
       });
 
     if (settingsError) {
       console.error('[gdrive_oauth_callback] Erro ao salvar settings:', settingsError);
+      return redirect(`${REDIRECT_BASE}?error=save_tokens_failed`);
     }
 
     console.log('[gdrive_oauth_callback] Sucesso! Redirecionando...');
 
-    return new Response(null, {
-      status: 302,
-      headers: {
-        ...corsHeaders,
-        'Location': 'https://muvtrainer.com/dashboard?connected=1'
-      }
-    });
+    return redirect(`${REDIRECT_BASE}?gdrive=success`);
 
   } catch (error: any) {
     console.error('[gdrive_oauth_callback] Erro geral:', error.message);
-    return new Response(null, {
-      status: 302,
-      headers: {
-        ...corsHeaders,
-        'Location': 'https://muvtrainer.com/dashboard?error=general_error'
-      }
-    });
+    return redirect(`${REDIRECT_BASE}?error=general_error`);
   }
 });

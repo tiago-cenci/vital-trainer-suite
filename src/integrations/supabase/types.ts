@@ -834,6 +834,7 @@ export type Database = {
       storage_settings: {
         Row: {
           created_at: string
+          gdrive_email: string | null
           gdrive_root_folder_id: string | null
           provider: string
           retention_days: number | null
@@ -842,6 +843,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          gdrive_email?: string | null
           gdrive_root_folder_id?: string | null
           provider?: string
           retention_days?: number | null
@@ -850,6 +852,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          gdrive_email?: string | null
           gdrive_root_folder_id?: string | null
           provider?: string
           retention_days?: number | null

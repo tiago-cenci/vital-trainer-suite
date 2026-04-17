@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   Users, Dumbbell, ClipboardList, BarChart3, Target, LogOut,
-  SearchCheck, BicepsFlexed, Settings2, FileText
+  SearchCheck, BicepsFlexed, Settings2, FileText, Settings
 } from 'lucide-react';
 import wordmarkLogo from '@/assets/muvtrainer-logo.svg';
 import iconLogo from '@/assets/icon-logo.svg';
@@ -36,6 +36,7 @@ const configItems = [
   { title: 'Periodizações', url: '/periodizacoes', icon: Target },
   { title: 'Tipos de Microciclos', url: '/tipos-microciclos', icon: Settings2 },
   { title: 'Anamnese', url: '/anamnese-config', icon: FileText },
+  { title: 'Configurações', url: '/configuracoes', icon: Settings },
 ];
 
 export function DashboardSidebar() {

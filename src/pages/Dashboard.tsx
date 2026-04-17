@@ -1,9 +1,9 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Users, Dumbbell, ClipboardList, Target, Cloud, BarChart3, Plus } from 'lucide-react';
+import { Users, Dumbbell, ClipboardList, Target, BarChart3, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
@@ -19,11 +19,6 @@ interface DashboardStats {
   treinosAtivos: number;
 }
 
-type StorageSettings = {
-  user_id: string;
-  provider: 'supabase' | 'gdrive';
-  gdrive_root_folder_id: string | null;
-} | null;
 
 type Insights = {
   mrr: number;
@@ -66,47 +61,9 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [insightsLoading, setInsightsLoading] = useState(true);
   const [insights, setInsights] = useState<Insights | null>(null);
-  const [storageSettings, setStorageSettings] = useState<StorageSettings>(null);
-  const [savingProvider, setSavingProvider] = useState(false);
 
   const { user } = useAuth();
   const navigate = useNavigate();
-
-  const handleConnectDrive = () => {
-    if (!user) return;
-    const p = new URLSearchParams({
-      client_id: '735901705166-34jjdvajlnf4m6sftfvte9bih0frehta.apps.googleusercontent.com',
-      redirect_uri: 'https://muvtrainer.com/auth/callback',
-      response_type: 'code',
-      scope: 'https://www.googleapis.com/auth/drive.file openid email profile',
-      access_type: 'offline',
-      prompt: 'consent',
-      state: JSON.stringify({ user_id: user.id }),
-    });
-    window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${p}`;
-  };
-
-  const handleUseDriveAsProvider = useCallback(async () => {
-    if (!user) return;
-    try {
-      setSavingProvider(true);
-      const { error } = await (supabase as any)
-        .from('storage_settings')
-        .upsert({
-          user_id: user.id,
-          provider: 'gdrive',
-          gdrive_root_folder_id: storageSettings?.gdrive_root_folder_id ?? null,
-        });
-      if (error) throw error;
-      setStorageSettings((prev) =>
-        prev ? { ...prev, provider: 'gdrive' } : { user_id: user.id, provider: 'gdrive', gdrive_root_folder_id: null }
-      );
-    } catch (e) {
-      console.error('Erro ao salvar provider=gdrive', e);
-    } finally {
-      setSavingProvider(false);
-    }
-  }, [user, storageSettings]);
 
   const fetchInsights = async (): Promise<Insights> => {
     const [mrrRes, ativosRes, kpiRes, semRes, corrRes, slaRes, mediaRes, topRes] = await Promise.all([
@@ -141,12 +98,11 @@ export default function Dashboard() {
     // Fast: load basic counts first for quick render
     const fetchBasic = async () => {
       try {
-        const [alunosRes, exerciciosRes, treinosRes, treinosAtivosRes, storageRes] = await Promise.all([
+        const [alunosRes, exerciciosRes, treinosRes, treinosAtivosRes] = await Promise.all([
           supabase.from('alunos').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
           supabase.from('exercicios').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
           supabase.from('treinos').select('id', { count: 'exact', head: true }),
           supabase.from('treinos').select('id', { count: 'exact', head: true }).eq('ativo', true),
-          (supabase as any).from('storage_settings').select('*').eq('user_id', user.id).maybeSingle(),
         ]);
 
         setStats({
@@ -155,7 +111,6 @@ export default function Dashboard() {
           totalTreinos: treinosRes.count || 0,
           treinosAtivos: treinosAtivosRes.count || 0,
         });
-        setStorageSettings((storageRes as any).data as StorageSettings);
       } catch (error) {
         console.error('Erro ao carregar stats:', error);
       } finally {
@@ -186,7 +141,7 @@ export default function Dashboard() {
     { title: 'Periodização', description: 'Criar nova periodização', icon: Target, action: () => navigate('/periodizacoes') },
   ];
 
-  const providerLabel = storageSettings?.provider === 'gdrive' ? 'Google Drive (ativo)' : 'Supabase (ativo)';
+  
 
   const isEmpty = stats.totalAlunos === 0 && stats.totalExercicios === 0 && stats.totalTreinos === 0;
 
@@ -348,32 +303,6 @@ export default function Dashboard() {
           <EmptyState />
         ) : (
           <>
-            {/* Storage / Drive */}
-            <Card className="dashboard-card">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Cloud className="h-5 w-5" />
-                    Armazenamento de Mídia
-                  </CardTitle>
-                  <CardDescription>
-                    Provider atual: <strong>{providerLabel}</strong>
-                    {storageSettings?.gdrive_root_folder_id ? ' • Drive conectado' : ' • Drive não conectado'}
-                  </CardDescription>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" onClick={handleConnectDrive}>
-                    Conectar Google Drive
-                  </Button>
-                  <Button
-                    onClick={handleUseDriveAsProvider}
-                    disabled={savingProvider || !storageSettings?.gdrive_root_folder_id}
-                  >
-                    {savingProvider ? 'Salvando...' : 'Usar Google Drive'}
-                  </Button>
-                </div>
-              </CardHeader>
-            </Card>
 
             {/* Stats cards */}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
