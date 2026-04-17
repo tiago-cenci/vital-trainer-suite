@@ -1,17 +1,20 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, UploadCloud, ChevronLeft, ChevronRight, Video, Clock } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Loader2, UploadCloud, ChevronLeft, ChevronRight, Video, Clock, Cloud, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 import { useExecucao, useCorrecaoAtual, useSalvarCorrecao, useUploadMidiaCorrecao, useMidiasCorrecao, useDeleteMidiaCorrecao } from '@/hooks/useCorrecao';
 import { useExecVideoUrl } from '@/hooks/useExecVideoUrl';
 import { useExercicioFromExec, useMediaNotaExercicio } from '@/hooks/useCorrecaoExtra';
+import { useStorageProvider } from '@/hooks/useStorageProvider';
 import { MidiaThumb } from './MidiaThumb';
 import { StarRating, StarRatingDisplay } from '@/components/ui/star-rating';
 
@@ -196,27 +199,30 @@ export function CorrecaoModal({
               {/* Upload */}
               <div className="space-y-2">
                 <Label className="text-sm font-semibold">Anexar Fotos ou Vídeos</Label>
-                <input
-                  ref={fileRef}
-                  type="file"
-                  accept="image/*,video/*"
-                  multiple
-                  className="hidden"
-                  onChange={handleFilesSelected}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => fileRef.current?.click()}
-                  disabled={!correcao?.id || upload.isPending}
-                >
-                  {upload.isPending ? (
-                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Enviando...</>
-                  ) : (
-                    <><UploadCloud className="h-4 w-4 mr-2" /> {correcao?.id ? 'Selecionar arquivos' : 'Salve um rascunho antes'}</>
-                  )}
-                </Button>
+
+                <MediaUploadGuard>
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept="image/*,video/*"
+                    multiple
+                    className="hidden"
+                    onChange={handleFilesSelected}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => fileRef.current?.click()}
+                    disabled={!correcao?.id || upload.isPending}
+                  >
+                    {upload.isPending ? (
+                      <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Enviando...</>
+                    ) : (
+                      <><UploadCloud className="h-4 w-4 mr-2" /> {correcao?.id ? 'Selecionar arquivos' : 'Salve um rascunho antes'}</>
+                    )}
+                  </Button>
+                </MediaUploadGuard>
               </div>
 
               {/* Media thumbnails */}
