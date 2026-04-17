@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -98,12 +98,11 @@ export default function Dashboard() {
     // Fast: load basic counts first for quick render
     const fetchBasic = async () => {
       try {
-        const [alunosRes, exerciciosRes, treinosRes, treinosAtivosRes, storageRes] = await Promise.all([
+        const [alunosRes, exerciciosRes, treinosRes, treinosAtivosRes] = await Promise.all([
           supabase.from('alunos').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
           supabase.from('exercicios').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
           supabase.from('treinos').select('id', { count: 'exact', head: true }),
           supabase.from('treinos').select('id', { count: 'exact', head: true }).eq('ativo', true),
-          (supabase as any).from('storage_settings').select('*').eq('user_id', user.id).maybeSingle(),
         ]);
 
         setStats({
@@ -112,7 +111,6 @@ export default function Dashboard() {
           totalTreinos: treinosRes.count || 0,
           treinosAtivos: treinosAtivosRes.count || 0,
         });
-        setStorageSettings((storageRes as any).data as StorageSettings);
       } catch (error) {
         console.error('Erro ao carregar stats:', error);
       } finally {
@@ -143,7 +141,7 @@ export default function Dashboard() {
     { title: 'Periodização', description: 'Criar nova periodização', icon: Target, action: () => navigate('/periodizacoes') },
   ];
 
-  const providerLabel = storageSettings?.provider === 'gdrive' ? 'Google Drive (ativo)' : 'Supabase (ativo)';
+  
 
   const isEmpty = stats.totalAlunos === 0 && stats.totalExercicios === 0 && stats.totalTreinos === 0;
 
@@ -305,32 +303,6 @@ export default function Dashboard() {
           <EmptyState />
         ) : (
           <>
-            {/* Storage / Drive */}
-            <Card className="dashboard-card">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Cloud className="h-5 w-5" />
-                    Armazenamento de Mídia
-                  </CardTitle>
-                  <CardDescription>
-                    Provider atual: <strong>{providerLabel}</strong>
-                    {storageSettings?.gdrive_root_folder_id ? ' • Drive conectado' : ' • Drive não conectado'}
-                  </CardDescription>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" onClick={handleConnectDrive}>
-                    Conectar Google Drive
-                  </Button>
-                  <Button
-                    onClick={handleUseDriveAsProvider}
-                    disabled={savingProvider || !storageSettings?.gdrive_root_folder_id}
-                  >
-                    {savingProvider ? 'Salvando...' : 'Usar Google Drive'}
-                  </Button>
-                </div>
-              </CardHeader>
-            </Card>
 
             {/* Stats cards */}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
