@@ -137,6 +137,16 @@ export default function TreinoFormPage({ mode }: TreinoFormPageProps) {
               exercicio_id: se.exercicio_id ?? '',
               series: (se.series as any[]) ?? [],
             })),
+          alongamentos: (s.sessoes_alongamentos ?? [])
+            .sort((a, b) => a.ordem - b.ordem)
+            .map(sa => ({
+              id: sa.id,
+              alongamento_id: sa.alongamento_id,
+              ordem: sa.ordem,
+              observacoes: sa.observacoes,
+              descricao: sa.alongamentos?.descricao,
+              grupo_muscular: sa.alongamentos?.grupo_muscular,
+            })),
         }))
     );
   }, [treinoExistente, alunos.length, periodizacoes.length]);

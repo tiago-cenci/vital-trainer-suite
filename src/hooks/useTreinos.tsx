@@ -54,6 +54,10 @@ const TREINO_SELECT = `
       *,
       exercicios (*),
       series (*)
+    ),
+    sessoes_alongamentos (
+      *,
+      alongamentos (*)
     )
   )
 ` as const;
@@ -95,11 +99,24 @@ async function persistirSessoes(
       // Atualizar sessão existente
       await supabase.from('sessoes').update({ nome: sessao.nome, ordem: sessao.ordem }).eq('id', sessao.id);
       sessaoId = sessao.id;
-      // Apagar exercícios antigos para recriar (mais simples que diff)
+      // Apagar exercícios e alongamentos antigos para recriar (mais simples que diff)
       await supabase.from('sessoes_exercicios').delete().eq('sessao_id', sessaoId);
+      await supabase.from('sessoes_alongamentos').delete().eq('sessao_id', sessaoId);
     }
 
-    // 3. Criar exercícios + séries
+    // 3. Criar alongamentos
+    if (sessao.alongamentos && sessao.alongamentos.length > 0) {
+      const alongsData = sessao.alongamentos.map((a, i) => ({
+        sessao_id: sessaoId,
+        alongamento_id: a.alongamento_id,
+        ordem: a.ordem ?? i + 1,
+        observacoes: a.observacoes,
+      }));
+      const { error: alongsError } = await supabase.from('sessoes_alongamentos').insert(alongsData);
+      if (alongsError) throw alongsError;
+    }
+
+    // 4. Criar exercícios + séries
     for (const ex of sessao.exercicios) {
       const { data: seData, error: seError } = await supabase
         .from('sessoes_exercicios')
@@ -119,7 +136,7 @@ async function persistirSessoes(
         .single();
       if (seError) throw seError;
 
-      // 4. Criar séries individuais
+      // 5. Criar séries individuais
       if (ex.series.length > 0) {
         const seriesData = ex.series.map((s, i) => ({
           sessao_exercicio_id: seData.id,
@@ -311,6 +328,12 @@ export function useTreinos(filters: TreinoFilters = {}) {
         ).map(ex => ({
           ...ex,
           id: `temp_${Math.random().toString(36).slice(2)}`,
+        })),
+        alongamentos: (s.sessoes_alongamentos ?? []).map(sa => ({
+          id: `temp_${Math.random().toString(36).slice(2)}`,
+          alongamento_id: sa.alongamento_id,
+          ordem: sa.ordem,
+          observacoes: sa.observacoes,
         })),
       }));
 

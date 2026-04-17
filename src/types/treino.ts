@@ -36,6 +36,18 @@ export interface ExercicioLocal {
   descanso_seg?: number;
 }
 
+/** Um alongamento dentro de uma sessão (estado local do form) */
+export interface AlongamentoSessaoLocal {
+  /** UUID real da tabela sessoes_alongamentos, ou temp_ */
+  id: string;
+  alongamento_id: string;
+  ordem: number;
+  observacoes: string | null;
+  // Campos denormalizados para exibição rápida
+  descricao?: string;
+  grupo_muscular?: string;
+}
+
 /** Uma sessão dentro do treino (estado local do form) */
 export interface SessaoLocal {
   /** UUID real ou temp_ */
@@ -43,6 +55,7 @@ export interface SessaoLocal {
   nome: string;
   ordem: number;
   exercicios: ExercicioLocal[];
+  alongamentos: AlongamentoSessaoLocal[];
 }
 
 // ─── Helpers de criação ────────────────────────────────────────────────
@@ -105,6 +118,7 @@ export function criarSessaoLocal(nome: string, ordem: number): SessaoLocal {
     nome,
     ordem,
     exercicios: [],
+    alongamentos: [],
   };
 }
 
@@ -150,7 +164,18 @@ export function replicarSessaoParaSessao(
     if (!ref) return ex;
     return replicarExercicioParaExercicio(ref, ex);
   });
-  return { ...destino, exercicios: novosExercicios };
+
+  // Replica alongamentos (substitui os do destino pelos da origem)
+  const novosAlongamentos = origem.alongamentos.map(a => ({
+    ...a,
+    id: uid(), // novos IDs temporários para o destino
+  }));
+
+  return {
+    ...destino,
+    exercicios: novosExercicios,
+    alongamentos: novosAlongamentos,
+  };
 }
 
 // ─── Conversão banco → local ─────────────────────────────────────────────

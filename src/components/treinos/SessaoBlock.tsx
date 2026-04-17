@@ -27,8 +27,12 @@ import { criarExercicioLocal } from '@/types/treino';
 import type { Tables } from '@/integrations/supabase/types';
 import { ExercicioBlock } from './ExercicioBlock';
 import { ExerciciosSeletor } from './ExerciciosSeletor';
+import { AlongamentosSeletor } from './AlongamentosSeletor';
+import { Trash2, Copy } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
 type Exercicio = Tables<'exercicios'>;
+type Alongamento = Tables<'alongamentos'>;
 
 // ─── Wrapper sortable ──────────────────────────────────────────────────────────
 
@@ -77,6 +81,7 @@ export function SessaoBlock({
 }: SessaoBlockProps) {
   const [open, setOpen] = useState(defaultOpen);
   const [showSeletor, setShowSeletor] = useState(false);
+  const [showAlongSeletor, setShowAlongSeletor] = useState(false);
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
@@ -113,6 +118,59 @@ export function SessaoBlock({
     setOpen(true);
   }, [sessao, onChange, periodizacaoAtiva]);
 
+  // ─── Mutações de alongamento ───────────────────────────────────────────────
+
+  const addAlongamento = useCallback((along: Alongamento) => {
+    const novo = {
+      id: `temp_${Math.random().toString(36).slice(2)}`,
+      alongamento_id: along.id,
+      ordem: (sessao.alongamentos?.length ?? 0) + 1,
+      observacoes: null,
+      descricao: along.descricao,
+      grupo_muscular: along.grupo_muscular,
+    };
+    onChange({
+      ...sessao,
+      alongamentos: [...(sessao.alongamentos ?? []), novo],
+    });
+    setShowAlongSeletor(false);
+    setOpen(true);
+  }, [sessao, onChange]);
+
+  const removeAlongamento = useCallback((id: string) => {
+    onChange({
+      ...sessao,
+      alongamentos: (sessao.alongamentos ?? [])
+        .filter(a => a.id !== id)
+        .map((a, i) => ({ ...a, ordem: i + 1 })),
+    });
+  }, [sessao, onChange]);
+
+  const duplicarAlongamentosPara = useCallback((destinoId: string) => {
+    const destino = todasSessoes.find(s => s.id === destinoId);
+    if (!destino) return;
+
+    const novosAlongs = (sessao.alongamentos ?? []).map(a => ({
+      ...a,
+      id: `temp_${Math.random().toString(36).slice(2)}`,
+    }));
+
+    const sessaoAtualizada = {
+      ...destino,
+      alongamentos: novosAlongs,
+    };
+
+    // O onChange aqui é o da SessaoBlock, que atualiza UMA sessão.
+    // Mas precisamos atualizar a sessão de DESTINO.
+    // Como o TreinoFormPage passa o onChange que atualiza o estado global de sessoes,
+    // podemos usar o mesmo onChange se ele for inteligente o suficiente,
+    // ou precisaremos de uma prop onSessaoChange (que já existe em ExercicioBlock).
+    // No TreinoFormPage, o updateSessao faz: setSessoes(prev => prev.map(s => s.id === updated.id ? updated : s));
+    // Então chamar onChange(sessaoAtualizada) vai funcionar perfeitamente!
+    onChange(sessaoAtualizada);
+    toast({ title: `Alongamentos duplicados para Sessão ${destino.nome}` });
+  }, [sessao, todasSessoes, onChange]);
+
   // ─── Drag & Drop ───────────────────────────────────────────────────────────
 
   function handleDragEnd(event: DragEndEvent) {
@@ -130,10 +188,12 @@ export function SessaoBlock({
   // ─── Ids já adicionados (para evitar duplicata no seletor) ───────────────
 
   const idsJaAdicionados = sessao.exercicios.map(e => e.exercicio_id);
+  const alongsJaAdicionados = (sessao.alongamentos ?? []).map(a => a.alongamento_id);
 
   // ─── Resumo de séries da sessão ──────────────────────────────────────────
 
   const totalSeries = sessao.exercicios.reduce((acc, e) => acc + e.series.length, 0);
+  const totalAlongs = sessao.alongamentos?.length ?? 0;
 
   return (
     <>
@@ -154,6 +214,11 @@ export function SessaoBlock({
                 <span className="text-xs text-muted-foreground">
                   {sessao.exercicios.length} exercício{sessao.exercicios.length !== 1 ? 's' : ''}
                 </span>
+                {totalAlongs > 0 && (
+                  <Badge variant="outline" className="text-[10px] h-4 px-1.5 border-primary/30 text-primary">
+                    {totalAlongs} alongamento{totalAlongs !== 1 ? 's' : ''}
+                  </Badge>
+                )}
                 {totalSeries > 0 && (
                   <Badge variant="secondary" className="text-[10px] h-4 px-1.5">
                     {totalSeries} série{totalSeries !== 1 ? 's' : ''}
@@ -174,10 +239,71 @@ export function SessaoBlock({
           </div>
         </CardHeader>
 
-        {/* ── Lista de exercícios ─────────────────────────────────────────────── */}
+        {/* ── Conteúdo da sessão ─────────────────────────────────────────────── */}
         {open && (
-          <CardContent className="pt-0 pb-5 px-5 space-y-3">
-            {sessao.exercicios.length > 0 ? (
+          <CardContent className="pt-0 pb-5 px-5 space-y-6">
+            {/* ── Seção de Alongamentos ───────────────────────────────────────── */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                  Alongamentos (Início)
+                </h3>
+                {totalAlongs > 0 && todasSessoes.length > 1 && (
+                  <Select onValueChange={duplicarAlongamentosPara}>
+                    <SelectTrigger className="h-7 w-auto text-[10px] border-dashed bg-transparent hover:bg-muted">
+                      <Copy className="h-3 w-3 mr-1" />
+                      Duplicar para...
+                    </SelectTrigger>
+                    <SelectContent>
+                      {todasSessoes
+                        .filter(s => s.id !== sessao.id)
+                        .map(s => (
+                          <SelectItem key={s.id} value={s.id}>Sessão {s.nome}</SelectItem>
+                        ))
+                      }
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                {(sessao.alongamentos ?? []).map((a) => (
+                  <div key={a.id} className="flex items-center gap-3 p-2 border rounded-md bg-muted/30 group">
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium truncate">{a.descricao}</div>
+                      <div className="text-[10px] text-muted-foreground">{a.grupo_muscular}</div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => removeAlongamento(a.id)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                ))}
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full gap-2 h-8 border-dashed text-[11px] text-muted-foreground hover:text-foreground"
+                  onClick={() => setShowAlongSeletor(true)}
+                >
+                  <Plus className="h-3 w-3" />
+                  Adicionar alongamento
+                </Button>
+              </div>
+            </div>
+
+            <Separator className="opacity-50" />
+
+            {/* ── Seção de Exercícios ─────────────────────────────────────────── */}
+            <div className="space-y-3">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Exercícios
+              </h3>
+              {sessao.exercicios.length > 0 ? (
               <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
                 <SortableContext
                   items={sessao.exercicios.map(e => e.id)}
@@ -231,6 +357,14 @@ export function SessaoBlock({
         exercicios={allExercicios}
         exerciciosJaAdicionados={idsJaAdicionados}
         onSelectExercicio={addExercicio}
+      />
+
+      {/* Seletor de alongamento */}
+      <AlongamentosSeletor
+        open={showAlongSeletor}
+        onOpenChange={setShowAlongSeletor}
+        alongamentosJaAdicionados={alongsJaAdicionados}
+        onSelectAlongamento={addAlongamento}
       />
     </>
   );
