@@ -145,7 +145,7 @@ export default function Configuracoes() {
                 <div className="space-y-3">
                   <div className="rounded-lg border bg-muted/30 p-4 space-y-2">
                     <div className="flex items-center gap-2 text-sm">
-                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      <CheckCircle2 className="h-4 w-4 text-success" />
                       <span className="font-medium">Conta vinculada</span>
                     </div>
                     {gdriveEmail ? (
