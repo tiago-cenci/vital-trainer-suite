@@ -145,13 +145,17 @@ export function useSalvarCorrecao(execId: string) {
 export function useUploadMidiaCorrecao(correcaoId?: string) {
   const qc = useQueryClient();
   const { user } = useAuth();
-  const { data: storageSettings } = useStorageProvider();
-  const provider = storageSettings?.provider || 'supabase';
+  const { isMediaConfigured } = useStorageProvider();
 
   return useMutation({
     mutationFn: async (files: File[]) => {
       if (!correcaoId) throw new Error('Crie/salve um rascunho antes de anexar mídias.');
       if (!user) throw new Error('Usuário não autenticado');
+      if (!isMediaConfigured) {
+        throw new Error(
+          'Conecte o Google Drive em Configurações > Integrações de Mídia antes de enviar arquivos.'
+        );
+      }
 
       const results: string[] = [];
 
@@ -161,93 +165,79 @@ export function useUploadMidiaCorrecao(correcaoId?: string) {
         if (!isVideo && !isImage) throw new Error(`Arquivo não suportado: ${file.name}`);
 
         const tipo = isVideo ? 'VIDEO' : 'FOTO';
-        let path: string;
 
-        if (provider === 'gdrive') {
-          const session = (await supabase.auth.getSession()).data.session;
-          if (!session?.access_token) throw new Error('Sessão inválida.');
+        const session = (await supabase.auth.getSession()).data.session;
+        if (!session?.access_token) throw new Error('Sessão inválida.');
 
-          // Get aluno_id
-          const { data: correcao } = await supabase
-            .from('correcoes')
-            .select(`
-              sessoes_exercicios_execucoes_id,
-              sessoes_exercicios_execucoes (
-                treino_execucao_id,
-                treinos_execucoes (
-                  aluno_id
-                )
+        // Get aluno_id
+        const { data: correcao } = await supabase
+          .from('correcoes')
+          .select(`
+            sessoes_exercicios_execucoes_id,
+            sessoes_exercicios_execucoes (
+              treino_execucao_id,
+              treinos_execucoes (
+                aluno_id
               )
-            `)
-            .eq('id', correcaoId)
-            .single();
+            )
+          `)
+          .eq('id', correcaoId)
+          .single();
 
-          const alunoId = (correcao as any)?.sessoes_exercicios_execucoes?.treinos_execucoes?.aluno_id;
+        const alunoId = (correcao as any)?.sessoes_exercicios_execucoes?.treinos_execucoes?.aluno_id;
 
-          const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-          const apikey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const apikey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-          // Step 1: init (creates file metadata + folders)
-          const initRes = await fetch(`${supabaseUrl}/functions/v1/gdrive_proxy`, {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${session.access_token}`,
-              apikey,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              action: 'upload-init',
-              fileName: file.name,
-              mimeType: file.type,
-              refTable: 'correcoes_midias',
-              refId: correcaoId,
-              alunoId,
-            }),
-          });
+        // Step 1: init (creates file metadata + folders)
+        const initRes = await fetch(`${supabaseUrl}/functions/v1/gdrive_proxy`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            apikey,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: 'upload-init',
+            fileName: file.name,
+            mimeType: file.type,
+            refTable: 'correcoes_midias',
+            refId: correcaoId,
+            alunoId,
+          }),
+        });
 
-          if (!initRes.ok) {
-            const err = await initRes.text();
-            throw new Error(`Erro ao iniciar upload: ${err}`);
-          }
-
-          const { fileId } = await initRes.json();
-
-          // Step 2: upload content through edge function (avoids CORS)
-          const fileBase64 = await fileToBase64(file);
-
-          const uploadRes = await fetch(`${supabaseUrl}/functions/v1/gdrive_proxy`, {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${session.access_token}`,
-              apikey,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              action: 'upload-content',
-              fileId,
-              mimeType: file.type,
-              fileBase64,
-            }),
-          });
-
-          if (!uploadRes.ok) {
-            const err = await uploadRes.text();
-            throw new Error(`Erro ao enviar conteúdo: ${err}`);
-          }
-
-          path = `gdrive:${fileId}`;
-        } else {
-          // Supabase Storage
-          const fileName = `${Date.now()}_${file.name}`;
-          const filePath = `${user.id}/${correcaoId}/${fileName}`;
-
-          const { error: uploadError } = await supabase.storage
-            .from('correcoes')
-            .upload(filePath, file, { upsert: true });
-
-          if (uploadError) throw uploadError;
-          path = filePath;
+        if (!initRes.ok) {
+          const err = await initRes.text();
+          throw new Error(`Erro ao iniciar upload: ${err}`);
         }
+
+        const { fileId } = await initRes.json();
+
+        // Step 2: upload content through edge function (avoids CORS)
+        const fileBase64 = await fileToBase64(file);
+
+        const uploadRes = await fetch(`${supabaseUrl}/functions/v1/gdrive_proxy`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            apikey,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: 'upload-content',
+            fileId,
+            mimeType: file.type,
+            fileBase64,
+          }),
+        });
+
+        if (!uploadRes.ok) {
+          const err = await uploadRes.text();
+          throw new Error(`Erro ao enviar conteúdo: ${err}`);
+        }
+
+        const path = `gdrive:${fileId}`;
 
         // Save record
         const { error: insertError } = await supabase
@@ -264,7 +254,7 @@ export function useUploadMidiaCorrecao(correcaoId?: string) {
       qc.invalidateQueries({ queryKey: ['correcoes:midias', correcaoId] });
       toast({
         title: `${paths.length} mídia(s) anexada(s)`,
-        description: `Upload concluído via ${provider === 'gdrive' ? 'Google Drive' : 'Supabase'}.`,
+        description: 'Upload concluído via Google Drive.',
       });
     },
     onError: (err: any) => {
@@ -276,12 +266,10 @@ export function useUploadMidiaCorrecao(correcaoId?: string) {
 
 export function useDeleteMidiaCorrecao(correcaoId?: string) {
   const qc = useQueryClient();
-  const { data: storageSettings } = useStorageProvider();
-  const provider = storageSettings?.provider || 'supabase';
 
   return useMutation({
     mutationFn: async (midia: Midia) => {
-      // Delete from storage
+      // Delete from storage (Drive only — legacy Supabase paths kept readable but not deletable here)
       if (midia.path.startsWith('gdrive:')) {
         const fileId = midia.path.replace('gdrive:', '');
         const session = (await supabase.auth.getSession()).data.session;
@@ -304,13 +292,8 @@ export function useDeleteMidiaCorrecao(correcaoId?: string) {
           const err = await res.text();
           throw new Error(`Erro ao deletar do Drive: ${err}`);
         }
-      } else {
-        // Supabase Storage
-        const { error } = await supabase.storage
-          .from('correcoes')
-          .remove([midia.path]);
-        if (error) throw error;
       }
+      // Para mídias antigas em Supabase Storage, removemos apenas o registro do DB.
 
       // Delete from DB
       const { error: dbError } = await supabase

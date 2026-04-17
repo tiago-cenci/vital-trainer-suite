@@ -7,7 +7,7 @@ export default function AuthCallback() {
     const state = qs.get("state");
 
     if (!code || !state) {
-      window.location.replace("/dashboard?error=missing_code");
+      window.location.replace("/configuracoes?error=missing_code");
       return;
     }
 

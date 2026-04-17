@@ -26,6 +26,7 @@ import AlunoDetalhe from "./pages/AlunoDetalhe";
 import AnamneseConfig from "./pages/AnamneseConfig";
 import AuthCallback from "./pages/AuthCallback";
 import SetPassword from "./pages/SetPassword";
+import Configuracoes from "./pages/Configuracoes";
 import { useGaPageview } from "./analytics/useGaPageview";
 import LandingPage from "./pages/LandingPage";
 
@@ -98,7 +99,7 @@ function AppRoutes() {
       />
       <Route
         path="/configuracoes"
-        element={<ProtectedRoute><div className="p-8 text-center"><h1 className="text-2xl font-bold mb-4">Configurações</h1><p className="text-muted-foreground">Em desenvolvimento</p></div></ProtectedRoute>}
+        element={<ProtectedRoute><Configuracoes /></ProtectedRoute>}
       />
 
       <Route path="*" element={<NotFound />} />
