@@ -1,16 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Search, Tags, Plus, Check } from 'lucide-react';
+import { Search, Tags, Plus, Check, X } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAlongamentos } from '@/hooks/useAlongamentos';
 import { useAlongamentoTags } from '@/hooks/useAlongamentoTags';
@@ -22,17 +23,18 @@ interface AlongamentosSeletorProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   alongamentosJaAdicionados: string[];
-  onSelectAlongamento: (alongamento: Alongamento) => void;
+  onSelectAlongamentos: (alongamentos: Alongamento[]) => void;
 }
 
 export function AlongamentosSeletor({
   open,
   onOpenChange,
   alongamentosJaAdicionados,
-  onSelectAlongamento,
+  onSelectAlongamentos,
 }: AlongamentosSeletorProps) {
   const [search, setSearch] = useState('');
   const [tagId, setTagId] = useState<string | undefined>(undefined);
+  const [selecionadosLocais, setSelecionadosLocais] = useState<Alongamento[]>([]);
 
   const { tags } = useAlongamentoTags();
   const { alongamentos, loading } = useAlongamentos({
@@ -40,13 +42,36 @@ export function AlongamentosSeletor({
     tag_id: tagId === '__ALL__' ? undefined : tagId,
   });
 
+  // Limpa a seleção local ao abrir o modal
+  useEffect(() => {
+    if (open) {
+      setSelecionadosLocais([]);
+    }
+  }, [open]);
+
+  const toggleSelecao = (along: Alongamento) => {
+    setSelecionadosLocais(prev => {
+      const isSelecionado = prev.some(a => a.id === along.id);
+      if (isSelecionado) {
+        return prev.filter(a => a.id !== along.id);
+      } else {
+        return [...prev, along];
+      }
+    });
+  };
+
+  const handleConfirmar = () => {
+    onSelectAlongamentos(selecionadosLocais);
+    onOpenChange(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl h-[80vh] flex flex-col p-0">
+      <DialogContent className="max-w-2xl h-[85vh] flex flex-col p-0">
         <DialogHeader className="p-6 pb-2">
           <DialogTitle>Selecionar Alongamentos</DialogTitle>
           <DialogDescription>
-            Busque e selecione alongamentos para adicionar ao início da sessão.
+            Selecione múltiplos alongamentos para adicionar ao início da sessão.
           </DialogDescription>
         </DialogHeader>
 
@@ -79,6 +104,23 @@ export function AlongamentosSeletor({
               </SelectContent>
             </Select>
           </div>
+
+          {selecionadosLocais.length > 0 && (
+            <div className="flex flex-wrap gap-2 p-2 bg-muted/50 rounded-md border border-dashed">
+              <span className="text-[10px] font-bold uppercase text-muted-foreground w-full mb-1">
+                Selecionados ({selecionadosLocais.length}):
+              </span>
+              {selecionadosLocais.map(a => (
+                <Badge key={a.id} variant="secondary" className="gap-1 pr-1">
+                  {a.descricao}
+                  <X 
+                    className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                    onClick={() => toggleSelecao(a)}
+                  />
+                </Badge>
+              ))}
+            </div>
+          )}
         </div>
 
         <ScrollArea className="flex-1 px-6">
@@ -93,11 +135,16 @@ export function AlongamentosSeletor({
           ) : (
             <div className="grid grid-cols-1 gap-2 pb-6">
               {alongamentos.map((a) => {
-                const isAdded = alongamentosJaAdicionados.includes(a.id);
+                const isAlreadyAdded = alongamentosJaAdicionados.includes(a.id);
+                const isSelectedLocally = selecionadosLocais.some(sel => sel.id === a.id);
+                
                 return (
                   <div
                     key={a.id}
-                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors group"
+                    className={`flex items-center justify-between p-3 border rounded-lg transition-colors group cursor-pointer ${
+                      isSelectedLocally ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
+                    } ${isAlreadyAdded ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    onClick={() => !isAlreadyAdded && toggleSelecao(a)}
                   >
                     <div className="min-w-0 flex-1">
                       <div className="font-medium truncate">{a.descricao}</div>
@@ -112,21 +159,32 @@ export function AlongamentosSeletor({
                         )}
                       </div>
                     </div>
-                    <Button
-                      size="sm"
-                      variant={isAdded ? "secondary" : "default"}
-                      className="ml-4 h-8 w-8 p-0 shrink-0"
-                      onClick={() => onSelectAlongamento(a)}
-                      disabled={isAdded}
-                    >
-                      {isAdded ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-                    </Button>
+                    <div className={`ml-4 h-6 w-6 rounded-full border flex items-center justify-center transition-colors ${
+                      isSelectedLocally ? 'bg-primary border-primary text-primary-foreground' : 'border-muted-foreground/30'
+                    }`}>
+                      {isSelectedLocally && <Check className="h-3.5 w-3.5" />}
+                      {!isSelectedLocally && !isAlreadyAdded && <Plus className="h-3.5 w-3.5 text-muted-foreground/50 group-hover:text-muted-foreground" />}
+                      {isAlreadyAdded && <Check className="h-3.5 w-3.5 text-muted-foreground/30" />}
+                    </div>
                   </div>
                 );
               })}
             </div>
           )}
         </ScrollArea>
+
+        <DialogFooter className="p-4 border-t bg-muted/20">
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            Cancelar
+          </Button>
+          <Button 
+            onClick={handleConfirmar} 
+            disabled={selecionadosLocais.length === 0}
+            className="min-w-[120px]"
+          >
+            Adicionar {selecionadosLocais.length > 0 ? `(${selecionadosLocais.length})` : ''}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

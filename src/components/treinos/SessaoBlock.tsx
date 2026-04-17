@@ -127,18 +127,19 @@ export function SessaoBlock({
 
   // ─── Mutações de alongamento ───────────────────────────────────────────────
 
-  const addAlongamento = useCallback((along: Alongamento) => {
-    const novo = {
-      id: `temp_${Math.random().toString(36).slice(2)}`,
+  const addAlongamentos = useCallback((alongs: Alongamento[]) => {
+    const novos = alongs.map((along, index) => ({
+      id: `temp_${Math.random().toString(36).slice(2)}_${index}`,
       alongamento_id: along.id,
-      ordem: (sessao.alongamentos?.length ?? 0) + 1,
+      ordem: (sessao.alongamentos?.length ?? 0) + index + 1,
       observacoes: null,
       descricao: along.descricao,
       grupo_muscular: along.grupo_muscular,
-    };
+    }));
+    
     onChange({
       ...sessao,
-      alongamentos: [...(sessao.alongamentos ?? []), novo],
+      alongamentos: [...(sessao.alongamentos ?? []), ...novos],
     });
     setShowAlongSeletor(false);
     setOpen(true);
@@ -365,7 +366,7 @@ export function SessaoBlock({
         open={showAlongSeletor}
         onOpenChange={setShowAlongSeletor}
         alongamentosJaAdicionados={alongsJaAdicionados}
-        onSelectAlongamento={addAlongamento}
+        onSelectAlongamentos={addAlongamentos}
       />
     </>
   );
