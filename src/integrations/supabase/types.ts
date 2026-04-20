@@ -557,6 +557,8 @@ export type Database = {
       series: {
         Row: {
           created_at: string | null
+          descanso_max: number | null
+          descanso_min: number | null
           descanso_seg: number | null
           id: string
           ordem: number | null
@@ -567,6 +569,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          descanso_max?: number | null
+          descanso_min?: number | null
           descanso_seg?: number | null
           id?: string
           ordem?: number | null
@@ -577,6 +581,8 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          descanso_max?: number | null
+          descanso_min?: number | null
           descanso_seg?: number | null
           id?: string
           ordem?: number | null
@@ -722,6 +728,7 @@ export type Database = {
           descanso_seg: number | null
           exercicio_id: string | null
           id: string
+          observacoes: string | null
           ordem: number
           prescricao_tipo: Database["public"]["Enums"]["prescricao_tipo_enum"]
           reps_max: number | null
@@ -735,6 +742,7 @@ export type Database = {
           descanso_seg?: number | null
           exercicio_id?: string | null
           id?: string
+          observacoes?: string | null
           ordem: number
           prescricao_tipo?: Database["public"]["Enums"]["prescricao_tipo_enum"]
           reps_max?: number | null
@@ -748,6 +756,7 @@ export type Database = {
           descanso_seg?: number | null
           exercicio_id?: string | null
           id?: string
+          observacoes?: string | null
           ordem?: number
           prescricao_tipo?: Database["public"]["Enums"]["prescricao_tipo_enum"]
           reps_max?: number | null
