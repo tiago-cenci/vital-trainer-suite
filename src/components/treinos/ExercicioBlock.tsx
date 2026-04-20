@@ -3,34 +3,26 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
-import {
-  ChevronDown,
-  ChevronUp,
-  GripVertical,
-  Trash2,
-  ArrowLeftRight,
-  RefreshCw,
-  Dumbbell,
+  ChevronDown, ChevronUp, GripVertical, Trash2, Copy, Dumbbell, MoreVertical,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ExercicioLocal, SessaoLocal } from '@/types/treino';
 import type { Tables } from '@/integrations/supabase/types';
-import { replicarExercicioParaExercicio, replicarSessaoParaSessao } from '@/types/treino';
+import { clonarExercicioLocal } from '@/types/treino';
 import { SeriesEditor } from './SeriesEditor';
 import { ExerciciosSeletor } from './ExerciciosSeletor';
 
@@ -44,7 +36,8 @@ interface ExercicioBlockProps {
   periodizacaoAtiva: boolean;
   onChange: (updated: ExercicioLocal) => void;
   onRemove: () => void;
-  onSessaoChange: (sessao: SessaoLocal) => void; // para replicar para outra sessão
+  /** Permite alterar outras sessões (para duplicar exercício para outra sessão) */
+  onSessoesChange: (sessoes: SessaoLocal[]) => void;
   dragHandleProps?: React.HTMLAttributes<HTMLElement>;
 }
 
@@ -56,290 +49,235 @@ export function ExercicioBlock({
   periodizacaoAtiva,
   onChange,
   onRemove,
-  onSessaoChange,
+  onSessoesChange,
   dragHandleProps,
 }: ExercicioBlockProps) {
   const [open, setOpen] = useState(false);
   const [showSeletor, setShowSeletor] = useState(false);
-  const [showReplicarExercicio, setShowReplicarExercicio] = useState(false);
-  const [showReplicarSessao, setShowReplicarSessao] = useState(false);
 
   const exercicioInfo = useMemo(
-    () => allExercicios.find(e => e.id === exercicio.exercicio_id),
+    () => allExercicios.find((e) => e.id === exercicio.exercicio_id),
     [allExercicios, exercicio.exercicio_id]
   );
 
   // ─── Mudança de modo (DETALHADA ↔ PERIODIZACAO) ───────────────────────
-
   function handleModoChange(modo: 'DETALHADA' | 'PERIODIZACAO') {
+    if (modo === exercicio.prescricao_tipo) return;
     onChange({
       ...exercicio,
       prescricao_tipo: modo,
       usar_periodizacao: modo === 'PERIODIZACAO',
-      // Mantém séries existentes; o SeriesEditor cuida do restante
+      // Reseta as séries ao mudar de modo, pois a estrutura é diferente
+      series:
+        modo === 'PERIODIZACAO'
+          ? [{ id: `temp_${Math.random().toString(36).slice(2)}`, tipo: 'WORK SET' as const, ordem: 1, reps_min: 0, reps_max: 0, descanso_min: 0, descanso_max: 0 }]
+          : exercicio.series.length > 0
+            ? exercicio.series
+            : [{ id: `temp_${Math.random().toString(36).slice(2)}`, tipo: 'WORK SET' as const, ordem: 1, reps_min: 8, reps_max: 12, descanso_min: 60, descanso_max: 90 }],
     });
   }
 
-  // ─── Replicar para exercício ───────────────────────────────────────────
-
-  function handleReplicarParaExercicio(destinoId: string) {
-    const destino = sessaoAtual.exercicios.find(e => e.id === destinoId);
-    if (!destino) return;
-    const atualizado = replicarExercicioParaExercicio(exercicio, destino);
-    const novosExercicios = sessaoAtual.exercicios.map(e =>
-      e.id === destinoId ? atualizado : e
+  // ─── Duplicar exercício dentro da mesma sessão ──────────────────────────
+  function handleDuplicarNaSessao() {
+    const novo = clonarExercicioLocal(exercicio, sessaoAtual.exercicios.length + 1);
+    const sessaoAtualizada: SessaoLocal = {
+      ...sessaoAtual,
+      exercicios: [...sessaoAtual.exercicios, novo],
+    };
+    onSessoesChange(
+      todasSessoes.map((s) => (s.id === sessaoAtual.id ? sessaoAtualizada : s))
     );
-    onSessaoChange({ ...sessaoAtual, exercicios: novosExercicios });
-    setShowReplicarExercicio(false);
   }
 
-  // ─── Replicar para sessão ─────────────────────────────────────────────
-
-  function handleReplicarParaSessao(destinoSessaoId: string) {
-    const destino = todasSessoes.find(s => s.id === destinoSessaoId);
+  // ─── Duplicar exercício para outra sessão ───────────────────────────────
+  function handleDuplicarParaSessao(destinoId: string) {
+    const destino = todasSessoes.find((s) => s.id === destinoId);
     if (!destino) return;
-    const atualizada = replicarSessaoParaSessao(sessaoAtual, destino);
-    onSessaoChange(atualizada);
-    setShowReplicarSessao(false);
+    const novo = clonarExercicioLocal(exercicio, destino.exercicios.length + 1);
+    const destinoAtualizado: SessaoLocal = {
+      ...destino,
+      exercicios: [...destino.exercicios, novo],
+    };
+    onSessoesChange(
+      todasSessoes.map((s) => (s.id === destinoId ? destinoAtualizado : s))
+    );
   }
 
   // ─── Resumo para o header (quando fechado) ─────────────────────────────
-
-  const resumoSeries = useMemo(() => {
-    const grupos: Record<string, number> = {};
-    exercicio.series.forEach(s => {
-      grupos[s.tipo] = (grupos[s.tipo] ?? 0) + 1;
-    });
-    return grupos;
-  }, [exercicio.series]);
-
   const resumoLabel = useMemo(() => {
     if (exercicio.series.length === 0) return 'Sem séries';
-    const partes = Object.entries(resumoSeries).map(([tipo, qtd]) => {
-      const abr = tipo === 'WORK SET' ? 'WS' : tipo === 'WARM-UP' ? 'WU' : 'FD';
-      return `${qtd}×${abr}`;
-    });
-    return partes.join(' · ');
-  }, [resumoSeries, exercicio.series]);
+    if (exercicio.prescricao_tipo === 'PERIODIZACAO') {
+      const grupos: Record<string, number> = {};
+      exercicio.series.forEach((s) => {
+        grupos[s.tipo] = (grupos[s.tipo] ?? 0) + 1;
+      });
+      return Object.entries(grupos)
+        .map(([tipo, qtd]) => {
+          const abr = tipo === 'WORK SET' ? 'WS' : tipo === 'WARM-UP' ? 'WU' : 'FD';
+          return `${qtd}×${abr}`;
+        })
+        .join(' · ');
+    }
+    return `${exercicio.series.length} série${exercicio.series.length !== 1 ? 's' : ''}`;
+  }, [exercicio.series, exercicio.prescricao_tipo]);
 
-  const outrosExercicios = sessaoAtual.exercicios.filter(e => e.id !== exercicio.id);
-  const outrasSessoes = todasSessoes.filter(s => s.id !== sessaoAtual.id);
+  const outrasSessoes = todasSessoes.filter((s) => s.id !== sessaoAtual.id);
 
   return (
-    <>
-      <Card className={cn('border transition-all duration-200', open && 'shadow-md border-primary/20')}>
-        {/* ── Cabeçalho ─────────────────────────────────────────────────────── */}
-        <CardHeader className="py-3 px-4">
-          <div className="flex items-center gap-3">
-            {/* Handle de drag (opcional) */}
-            {dragHandleProps && (
-              <span
-                {...dragHandleProps}
-                className="cursor-grab text-muted-foreground hover:text-foreground shrink-0"
-              >
-                <GripVertical className="h-4 w-4" />
-              </span>
-            )}
+    <Card className={cn('border transition-all duration-200', open && 'shadow-md border-primary/20')}>
+      {/* ── Cabeçalho ─────────────────────────────────────────────────────── */}
+      <CardHeader className="py-3 px-3 sm:px-4">
+        <div className="flex items-center gap-2 sm:gap-3">
+          {dragHandleProps && (
+            <span
+              {...dragHandleProps}
+              className="cursor-grab text-muted-foreground hover:text-foreground shrink-0 hidden sm:inline-flex"
+            >
+              <GripVertical className="h-4 w-4" />
+            </span>
+          )}
 
-            {/* Ícone + nome */}
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
-                <Dumbbell className="h-4 w-4 text-primary" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold truncate">
-                  {exercicioInfo?.nome ?? 'Exercício'}
-                </p>
-                {!open && (
-                  <p className="text-xs text-muted-foreground">
-                    {resumoLabel}
-                    {exercicio.prescricao_tipo === 'PERIODIZACAO' && (
-                      <Badge variant="outline" className="ml-2 text-[10px] py-0 h-4">Periodização</Badge>
-                    )}
-                  </p>
-                )}
-              </div>
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+              <Dumbbell className="h-4 w-4 text-primary" />
             </div>
-
-            {/* Ações do header */}
-            <div className="flex items-center gap-1 shrink-0">
-              {/* Menu de replicação */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <RefreshCw className="h-3.5 w-3.5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-52">
-                  <DropdownMenuLabel className="text-xs text-muted-foreground">Replicar configuração</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    disabled={outrosExercicios.length === 0}
-                    onClick={() => setShowReplicarExercicio(true)}
-                  >
-                    <ArrowLeftRight className="h-3.5 w-3.5 mr-2" />
-                    Para outro exercício desta sessão
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    disabled={outrasSessoes.length === 0}
-                    onClick={() => setShowReplicarSessao(true)}
-                  >
-                    <ArrowLeftRight className="h-3.5 w-3.5 mr-2" />
-                    Sessão inteira para outra sessão
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              {/* Trocar exercício */}
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-8 text-xs text-muted-foreground"
-                onClick={() => setShowSeletor(true)}
-              >
-                Trocar
-              </Button>
-
-              {/* Remover */}
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                onClick={onRemove}
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
-
-              {/* Expandir/colapsar */}
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => setOpen(o => !o)}
-              >
-                {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-              </Button>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold truncate">
+                {exercicioInfo?.nome ?? 'Exercício'}
+              </p>
+              {!open && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1.5 flex-wrap">
+                  <span>{resumoLabel}</span>
+                  {exercicio.prescricao_tipo === 'PERIODIZACAO' && (
+                    <Badge variant="outline" className="text-[10px] py-0 h-4">Periodização</Badge>
+                  )}
+                </p>
+              )}
             </div>
           </div>
-        </CardHeader>
 
-        {/* ── Conteúdo expandido ─────────────────────────────────────────────── */}
-        {open && (
-          <CardContent className="pt-0 pb-4 px-4 space-y-4">
-            {/* Seletor de modo (apenas se periodização estiver ativa no treino) */}
-            {periodizacaoAtiva && (
-              <Tabs
-                value={exercicio.prescricao_tipo}
-                onValueChange={(v) => handleModoChange(v as 'DETALHADA' | 'PERIODIZACAO')}
-                className="w-full"
-              >
-                <TabsList className="h-8 text-xs w-full grid grid-cols-2">
-                  <TabsTrigger value="DETALHADA" className="text-xs">Manual / Detalhado</TabsTrigger>
-                  <TabsTrigger value="PERIODIZACAO" className="text-xs">Usa Periodização</TabsTrigger>
-                </TabsList>
-              </Tabs>
-            )}
+          {/* Ações do header */}
+          <div className="flex items-center gap-0.5 shrink-0">
+            {/* Menu de ações */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Mais ações">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel className="text-xs text-muted-foreground">Ações do exercício</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setShowSeletor(true)}>
+                  Trocar exercício
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleDuplicarNaSessao}>
+                  <Copy className="h-3.5 w-3.5 mr-2" />
+                  Duplicar nesta sessão
+                </DropdownMenuItem>
+                {outrasSessoes.length > 0 && (
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                      <Copy className="h-3.5 w-3.5 mr-2" />
+                      Duplicar para outra sessão
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent>
+                      {outrasSessoes.map((s) => (
+                        <DropdownMenuItem key={s.id} onClick={() => handleDuplicarParaSessao(s.id)}>
+                          Sessão {s.nome}
+                          <span className="ml-auto text-[10px] text-muted-foreground">
+                            {s.exercicios.length}
+                          </span>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={onRemove} className="text-destructive focus:text-destructive">
+                  <Trash2 className="h-3.5 w-3.5 mr-2" />
+                  Remover
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-            {/* Editor de séries */}
-            <SeriesEditor
-              series={exercicio.series}
-              onChange={(series) => onChange({ ...exercicio, series })}
-              periodizacaoMode={exercicio.prescricao_tipo === 'PERIODIZACAO'}
-              onReplicarParaExercicio={
-                outrosExercicios.length > 0 ? () => setShowReplicarExercicio(true) : undefined
-              }
-              onReplicarParaSessao={
-                outrasSessoes.length > 0 ? () => setShowReplicarSessao(true) : undefined
-              }
+            {/* Expandir/colapsar */}
+            <Button
+              type="button" variant="ghost" size="icon" className="h-8 w-8"
+              onClick={() => setOpen((o) => !o)}
+              aria-label={open ? 'Recolher' : 'Expandir'}
+            >
+              {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+
+      {/* ── Conteúdo expandido ─────────────────────────────────────────────── */}
+      {open && (
+        <CardContent className="pt-0 pb-4 px-3 sm:px-4 space-y-4">
+          {/* Seletor de modo (apenas se periodização estiver ativa no treino) */}
+          {periodizacaoAtiva && (
+            <Tabs
+              value={exercicio.prescricao_tipo}
+              onValueChange={(v) => handleModoChange(v as 'DETALHADA' | 'PERIODIZACAO')}
+              className="w-full"
+            >
+              <TabsList className="h-8 text-xs w-full grid grid-cols-2">
+                <TabsTrigger value="DETALHADA" className="text-xs">Manual</TabsTrigger>
+                <TabsTrigger value="PERIODIZACAO" className="text-xs">Usa Periodização</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          )}
+
+          {/* Editor de séries */}
+          <SeriesEditor
+            series={exercicio.series}
+            onChange={(series) => onChange({ ...exercicio, series })}
+            periodizacaoMode={exercicio.prescricao_tipo === 'PERIODIZACAO'}
+          />
+
+          {/* Observação livre */}
+          <div className="space-y-1.5">
+            <Label htmlFor={`obs-${exercicio.id}`} className="text-xs text-muted-foreground">
+              Observação (método, dica, regra do exercício…)
+            </Label>
+            <Textarea
+              id={`obs-${exercicio.id}`}
+              value={exercicio.observacoes ?? ''}
+              onChange={(e) => onChange({ ...exercicio, observacoes: e.target.value || null })}
+              placeholder="Ex: drop-set na última, cadência 3-1-3, foco na contração…"
+              rows={2}
+              className="text-sm resize-none"
             />
+          </div>
 
-            {/* Grupos musculares do exercício */}
-            {exercicioInfo?.grupos_musculares && exercicioInfo.grupos_musculares.length > 0 && (
-              <div className="flex flex-wrap gap-1 pt-1 border-t">
-                {exercicioInfo.grupos_musculares.map((g: string) => (
-                  <Badge key={g} variant="secondary" className="text-[10px]">{g}</Badge>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        )}
-      </Card>
+          {/* Grupos musculares do exercício */}
+          {exercicioInfo?.grupos_musculares && exercicioInfo.grupos_musculares.length > 0 && (
+            <div className="flex flex-wrap gap-1 pt-1 border-t">
+              {exercicioInfo.grupos_musculares.map((g: string) => (
+                <Badge key={g} variant="secondary" className="text-[10px]">{g}</Badge>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      )}
 
-      {/* ── Modal: trocar exercício ─────────────────────────────────────────── */}
+      {/* Modal: trocar exercício */}
       <ExerciciosSeletor
         open={showSeletor}
         onOpenChange={setShowSeletor}
         exercicios={allExercicios}
         exerciciosJaAdicionados={
           sessaoAtual.exercicios
-            .filter(e => e.id !== exercicio.id)
-            .map(e => e.exercicio_id)
+            .filter((e) => e.id !== exercicio.id)
+            .map((e) => e.exercicio_id)
         }
         onSelectExercicio={(id) => {
           onChange({ ...exercicio, exercicio_id: id });
           setShowSeletor(false);
         }}
       />
-
-      {/* ── Modal: replicar para exercício ─────────────────────────────────── */}
-      <Dialog open={showReplicarExercicio} onOpenChange={setShowReplicarExercicio}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Copiar configuração de séries</DialogTitle>
-            <DialogDescription>
-              Selecione o exercício de destino. As reps e descanso serão copiados para cada série correspondente.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2 pt-2">
-            {outrosExercicios.map(e => {
-              const info = allExercicios.find(ex => ex.id === e.exercicio_id);
-              return (
-                <Button
-                  key={e.id}
-                  type="button"
-                  variant="outline"
-                  className="w-full justify-start gap-2 h-auto py-3"
-                  onClick={() => handleReplicarParaExercicio(e.id)}
-                >
-                  <Dumbbell className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <span className="text-sm text-left">{info?.nome ?? 'Exercício'}</span>
-                </Button>
-              );
-            })}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* ── Modal: replicar sessão → sessão ────────────────────────────────── */}
-      <Dialog open={showReplicarSessao} onOpenChange={setShowReplicarSessao}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Copiar configuração da sessão</DialogTitle>
-            <DialogDescription>
-              Os exercícios de "{sessaoAtual.nome}" serão emparelhados por índice com a sessão de destino.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2 pt-2">
-            {outrasSessoes.map(s => (
-              <Button
-                key={s.id}
-                type="button"
-                variant="outline"
-                className="w-full justify-start gap-2 h-auto py-3"
-                onClick={() => handleReplicarParaSessao(s.id)}
-              >
-                <span className="text-sm font-semibold text-primary">Sessão {s.nome}</span>
-                <span className="text-xs text-muted-foreground ml-auto">
-                  {s.exercicios.length} exercício{s.exercicios.length !== 1 ? 's' : ''}
-                </span>
-              </Button>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
+    </Card>
   );
 }

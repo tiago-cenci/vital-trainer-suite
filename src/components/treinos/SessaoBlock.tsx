@@ -4,14 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
-  ChevronDown, ChevronUp, Plus, Trash2, Copy
+  ChevronDown, ChevronUp, Plus, Trash2, Copy, MoreVertical,
 } from 'lucide-react';
 import {
   DndContext,
@@ -31,7 +32,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { cn } from '@/lib/utils';
 import type { SessaoLocal, ExercicioLocal } from '@/types/treino';
-import { criarExercicioLocal } from '@/types/treino';
+import { criarExercicioLocal, clonarSessaoConteudo } from '@/types/treino';
 import type { Tables } from '@/integrations/supabase/types';
 import { ExercicioBlock } from './ExercicioBlock';
 import { ExerciciosSeletor } from './ExerciciosSeletor';
@@ -74,7 +75,10 @@ interface SessaoBlockProps {
   todasSessoes: SessaoLocal[];
   allExercicios: Exercicio[];
   periodizacaoAtiva: boolean;
+  /** Atualiza só esta sessão */
   onChange: (sessao: SessaoLocal) => void;
+  /** Atualiza várias sessões (usado para duplicar entre sessões) */
+  onSessoesChange: (sessoes: SessaoLocal[]) => void;
   defaultOpen?: boolean;
 }
 
@@ -84,6 +88,7 @@ export function SessaoBlock({
   allExercicios,
   periodizacaoAtiva,
   onChange,
+  onSessoesChange,
   defaultOpen = false,
 }: SessaoBlockProps) {
   const [open, setOpen] = useState(defaultOpen);
@@ -97,11 +102,10 @@ export function SessaoBlock({
   );
 
   // ─── Mutações de exercício ─────────────────────────────────────────────────
-
   const updateExercicio = useCallback((updated: ExercicioLocal) => {
     onChange({
       ...sessao,
-      exercicios: sessao.exercicios.map(e => e.id === updated.id ? updated : e),
+      exercicios: sessao.exercicios.map((e) => (e.id === updated.id ? updated : e)),
     });
   }, [sessao, onChange]);
 
@@ -109,7 +113,7 @@ export function SessaoBlock({
     onChange({
       ...sessao,
       exercicios: sessao.exercicios
-        .filter(e => e.id !== id)
+        .filter((e) => e.id !== id)
         .map((e, i) => ({ ...e, ordem: i + 1 })),
     });
   }, [sessao, onChange]);
@@ -126,7 +130,6 @@ export function SessaoBlock({
   }, [sessao, onChange, periodizacaoAtiva]);
 
   // ─── Mutações de alongamento ───────────────────────────────────────────────
-
   const addAlongamentos = useCallback((alongs: Alongamento[]) => {
     const novos = alongs.map((along, index) => ({
       id: `temp_${Math.random().toString(36).slice(2)}_${index}`,
@@ -136,7 +139,7 @@ export function SessaoBlock({
       descricao: along.descricao,
       grupo_muscular: along.grupo_muscular,
     }));
-    
+
     onChange({
       ...sessao,
       alongamentos: [...(sessao.alongamentos ?? []), ...novos],
@@ -149,60 +152,50 @@ export function SessaoBlock({
     onChange({
       ...sessao,
       alongamentos: (sessao.alongamentos ?? [])
-        .filter(a => a.id !== id)
+        .filter((a) => a.id !== id)
         .map((a, i) => ({ ...a, ordem: i + 1 })),
     });
   }, [sessao, onChange]);
 
-  const duplicarAlongamentosPara = useCallback((destinoId: string) => {
-    const destino = todasSessoes.find(s => s.id === destinoId);
+  // ─── Duplicar sessão inteira para outra sessão ───────────────────────────
+  const duplicarSessaoPara = useCallback((destinoId: string) => {
+    const destino = todasSessoes.find((s) => s.id === destinoId);
     if (!destino) return;
-
-    const novosAlongs = (sessao.alongamentos ?? []).map(a => ({
-      ...a,
-      id: `temp_${Math.random().toString(36).slice(2)}`,
-    }));
-
-    const sessaoAtualizada = {
-      ...destino,
-      alongamentos: novosAlongs,
-    };
-
-    onChange(sessaoAtualizada);
-    toast({ title: `Alongamentos duplicados para Sessão ${destino.nome}` });
-  }, [sessao, todasSessoes, onChange]);
+    const atualizada = clonarSessaoConteudo(sessao, destino);
+    onSessoesChange(todasSessoes.map((s) => (s.id === destinoId ? atualizada : s)));
+    toast({
+      title: `Conteúdo duplicado`,
+      description: `Sessão ${destino.nome} agora contém os exercícios e alongamentos da Sessão ${sessao.nome}.`,
+    });
+  }, [sessao, todasSessoes, onSessoesChange]);
 
   // ─── Drag & Drop ───────────────────────────────────────────────────────────
-
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
-    const oldIndex = sessao.exercicios.findIndex(e => e.id === active.id);
-    const newIndex = sessao.exercicios.findIndex(e => e.id === over.id);
+    const oldIndex = sessao.exercicios.findIndex((e) => e.id === active.id);
+    const newIndex = sessao.exercicios.findIndex((e) => e.id === over.id);
     const reordenados = arrayMove(sessao.exercicios, oldIndex, newIndex)
       .map((e, i) => ({ ...e, ordem: i + 1 }));
 
     onChange({ ...sessao, exercicios: reordenados });
   }
 
-  // ─── Ids já adicionados (para evitar duplicata no seletor) ───────────────
-
-  const idsJaAdicionados = sessao.exercicios.map(e => e.exercicio_id);
-  const alongsJaAdicionados = (sessao.alongamentos ?? []).map(a => a.alongamento_id);
-
-  // ─── Resumo de séries da sessão ──────────────────────────────────────────
-
+  // ─── Helpers ─────────────────────────────────────────────────────────────
+  const idsJaAdicionados = sessao.exercicios.map((e) => e.exercicio_id);
+  const alongsJaAdicionados = (sessao.alongamentos ?? []).map((a) => a.alongamento_id);
   const totalSeries = sessao.exercicios.reduce((acc, e) => acc + e.series.length, 0);
   const totalAlongs = sessao.alongamentos?.length ?? 0;
+  const outrasSessoes = todasSessoes.filter((s) => s.id !== sessao.id);
 
   return (
     <>
       <Card className={cn('border-2 transition-all', open && 'border-primary/30')}>
         {/* ── Cabeçalho da sessão ─────────────────────────────────────────────── */}
         <CardHeader
-          className="py-4 px-5 cursor-pointer select-none"
-          onClick={() => setOpen(o => !o)}
+          className="py-4 px-4 sm:px-5 cursor-pointer select-none"
+          onClick={() => setOpen((o) => !o)}
         >
           <div className="flex items-center gap-3">
             <div className="h-9 w-9 rounded-full bg-primary flex items-center justify-center shrink-0">
@@ -228,12 +221,40 @@ export function SessaoBlock({
               </div>
             </div>
 
+            {/* Menu de ações da sessão */}
+            {outrasSessoes.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button" variant="ghost" size="icon" className="h-8 w-8 shrink-0"
+                    onClick={(e) => e.stopPropagation()}
+                    aria-label="Ações da sessão"
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56" onClick={(e) => e.stopPropagation()}>
+                  <DropdownMenuLabel className="text-xs text-muted-foreground">
+                    Duplicar conteúdo desta sessão para…
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {outrasSessoes.map((s) => (
+                    <DropdownMenuItem key={s.id} onClick={() => duplicarSessaoPara(s.id)}>
+                      <Copy className="h-3.5 w-3.5 mr-2" />
+                      Sessão {s.nome}
+                      <span className="ml-auto text-[10px] text-muted-foreground">
+                        {s.exercicios.length}
+                      </span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+
             <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 shrink-0"
-              onClick={e => { e.stopPropagation(); setOpen(o => !o); }}
+              type="button" variant="ghost" size="icon" className="h-8 w-8 shrink-0"
+              onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }}
+              aria-label={open ? 'Recolher' : 'Expandir'}
             >
               {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </Button>
@@ -242,30 +263,12 @@ export function SessaoBlock({
 
         {/* ── Conteúdo da sessão ─────────────────────────────────────────────── */}
         {open && (
-          <CardContent className="pt-0 pb-5 px-5 space-y-6">
-            {/* ── Seção de Alongamentos ───────────────────────────────────────── */}
+          <CardContent className="pt-0 pb-5 px-4 sm:px-5 space-y-6">
+            {/* ── Alongamentos ───────────────────────────────────────────────── */}
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                  Alongamentos (Início)
-                </h3>
-                {totalAlongs > 0 && todasSessoes.length > 1 && (
-                  <Select onValueChange={duplicarAlongamentosPara}>
-                    <SelectTrigger className="h-7 w-auto text-[10px] border-dashed bg-transparent hover:bg-muted">
-                      <Copy className="h-3 w-3 mr-1" />
-                      Duplicar para...
-                    </SelectTrigger>
-                    <SelectContent>
-                      {todasSessoes
-                        .filter(s => s.id !== sessao.id)
-                        .map(s => (
-                          <SelectItem key={s.id} value={s.id}>Sessão {s.nome}</SelectItem>
-                        ))
-                      }
-                    </SelectContent>
-                  </Select>
-                )}
-              </div>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Alongamentos (Início)
+              </h3>
 
               <div className="space-y-2">
                 {(sessao.alongamentos ?? []).map((a) => (
@@ -299,7 +302,7 @@ export function SessaoBlock({
 
             <Separator className="opacity-50" />
 
-            {/* ── Seção de Exercícios ─────────────────────────────────────────── */}
+            {/* ── Exercícios ─────────────────────────────────────────────────── */}
             <div className="space-y-3">
               <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                 Exercícios
@@ -307,11 +310,11 @@ export function SessaoBlock({
               {sessao.exercicios.length > 0 ? (
                 <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
                   <SortableContext
-                    items={sessao.exercicios.map(e => e.id)}
+                    items={sessao.exercicios.map((e) => e.id)}
                     strategy={verticalListSortingStrategy}
                   >
                     <div className="space-y-2">
-                      {sessao.exercicios.map(ex => (
+                      {sessao.exercicios.map((ex) => (
                         <SortableExercicio key={ex.id} exercicioLocal={ex}>
                           {(dragHandleProps) => (
                             <ExercicioBlock
@@ -322,7 +325,7 @@ export function SessaoBlock({
                               periodizacaoAtiva={periodizacaoAtiva}
                               onChange={updateExercicio}
                               onRemove={() => removeExercicio(ex.id)}
-                              onSessaoChange={onChange}
+                              onSessoesChange={onSessoesChange}
                               dragHandleProps={dragHandleProps}
                             />
                           )}
@@ -337,7 +340,6 @@ export function SessaoBlock({
                 </div>
               )}
 
-              {/* Botão adicionar exercício */}
               <Button
                 type="button"
                 variant="outline"
@@ -352,7 +354,6 @@ export function SessaoBlock({
         )}
       </Card>
 
-      {/* Seletor de exercício */}
       <ExerciciosSeletor
         open={showSeletor}
         onOpenChange={setShowSeletor}
@@ -361,7 +362,6 @@ export function SessaoBlock({
         onSelectExercicio={addExercicio}
       />
 
-      {/* Seletor de alongamento */}
       <AlongamentosSeletor
         open={showAlongSeletor}
         onOpenChange={setShowAlongSeletor}

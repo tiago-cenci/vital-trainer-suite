@@ -5,12 +5,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
-  Plus, Trash2, Copy, CopyCheck, ChevronDown, ChevronUp,
-  Flame, Zap, Target,
+  Plus, Trash2, ChevronDown, ChevronUp,
+  Flame, Zap, Target, GripVertical,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { SerieLocal, TipoSerie } from '@/types/treino';
-import { criarSerie } from '@/types/treino';
+import { criarSerieManual, criarSeriePeriodizacao } from '@/types/treino';
 
 // ─── Metadados de cada tipo de série ─────────────────────────────────────────
 
@@ -18,13 +18,13 @@ const TIPO_META: Record<TipoSerie, { label: string; abbr: string; color: string;
   'WARM-UP': {
     label: 'Warm-up',
     abbr: 'WU',
-    color: 'text-orange-500 bg-orange-50 border-orange-200',
+    color: 'text-orange-600 bg-orange-50 border-orange-200 dark:bg-orange-950/30',
     icon: <Flame className="h-3.5 w-3.5" />,
   },
   FEEDER: {
     label: 'Feeder',
     abbr: 'FD',
-    color: 'text-yellow-600 bg-yellow-50 border-yellow-200',
+    color: 'text-yellow-700 bg-yellow-50 border-yellow-200 dark:bg-yellow-950/30',
     icon: <Zap className="h-3.5 w-3.5" />,
   },
   'WORK SET': {
@@ -35,68 +35,155 @@ const TIPO_META: Record<TipoSerie, { label: string; abbr: string; color: string;
   },
 };
 
-// ─── Linha de série ────────────────────────────────────────────────────────────
+// ─── Linha de série em modo MANUAL (DETALHADA) ───────────────────────────────
 
-interface SerieRowProps {
+interface SerieManualRowProps {
   serie: SerieLocal;
   index: number;
   total: number;
   onChange: (updated: SerieLocal) => void;
   onRemove: () => void;
-  onReplicarParaProxima: () => void;
-  onReplicarParaTodas: () => void;
   onMoverParaCima: () => void;
   onMoverParaBaixo: () => void;
-  periodizacaoMode: boolean;
 }
 
-function SerieRow({
-  serie,
-  index,
-  total,
-  onChange,
-  onRemove,
-  onReplicarParaProxima,
-  onReplicarParaTodas,
-  onMoverParaCima,
-  onMoverParaBaixo,
-  periodizacaoMode,
-}: SerieRowProps) {
-  const meta = TIPO_META[serie.tipo];
-
-  const update = (patch: Partial<SerieLocal>) => onChange({ ...serie, ...patch, _replicado: false });
+function SerieManualRow({
+  serie, index, total, onChange, onRemove, onMoverParaCima, onMoverParaBaixo,
+}: SerieManualRowProps) {
+  const update = (patch: Partial<SerieLocal>) => onChange({ ...serie, ...patch });
 
   return (
-    <div
-      className={cn(
-        'grid items-center gap-2 px-3 py-2 rounded-lg border transition-colors',
-        'hover:bg-muted/30',
-        serie._replicado && 'bg-muted/20 border-dashed',
-        // Layout: num | tipo | reps-min | – | reps-max | descanso | ações
-        'grid-cols-[28px_110px_1fr_10px_1fr_1fr_auto]'
-      )}
-    >
-      {/* Número da série */}
+    <div className="grid items-center gap-1.5 px-2 py-2 rounded-lg border hover:bg-muted/30 transition-colors
+                    grid-cols-[24px_minmax(0,1fr)_auto_minmax(0,1fr)_minmax(0,1fr)_auto_minmax(0,1fr)_auto]">
       <span className="text-xs font-mono text-muted-foreground text-center select-none">
         {String(index + 1).padStart(2, '0')}
       </span>
 
-      {/* Tipo */}
-      <Select
-        value={serie.tipo}
-        onValueChange={(v) => update({ tipo: v as TipoSerie })}
-      >
-        <SelectTrigger className="h-8 text-xs px-2">
-          <div className="flex items-center gap-1.5">
-            <Badge
-              variant="outline"
-              className={cn('text-[10px] px-1.5 py-0 h-4 gap-0.5 font-mono', meta.color)}
-            >
-              {meta.icon}
-              {meta.abbr}
+      {/* Reps mín */}
+      <Input
+        type="number" min={1} max={999}
+        value={serie.reps_min}
+        onChange={(e) => {
+          const v = parseInt(e.target.value, 10);
+          if (!isNaN(v)) update({ reps_min: v, reps_max: Math.max(serie.reps_max, v) });
+        }}
+        className="h-8 text-xs text-center px-1"
+        title="Reps mínimas"
+      />
+      <span className="text-muted-foreground text-xs px-0.5 select-none">a</span>
+      <Input
+        type="number" min={serie.reps_min} max={999}
+        value={serie.reps_max}
+        onChange={(e) => {
+          const v = parseInt(e.target.value, 10);
+          if (!isNaN(v)) update({ reps_max: v });
+        }}
+        className="h-8 text-xs text-center px-1"
+        title="Reps máximas"
+      />
+
+      {/* Descanso mín – máx (segundos) */}
+      <Input
+        type="number" min={0} max={999}
+        value={serie.descanso_min}
+        onChange={(e) => {
+          const v = parseInt(e.target.value, 10);
+          if (!isNaN(v)) update({ descanso_min: v, descanso_max: Math.max(serie.descanso_max, v) });
+        }}
+        className="h-8 text-xs text-center px-1"
+        title="Descanso mínimo (segundos)"
+      />
+      <span className="text-muted-foreground text-xs px-0.5 select-none">a</span>
+      <Input
+        type="number" min={serie.descanso_min} max={999}
+        value={serie.descanso_max}
+        onChange={(e) => {
+          const v = parseInt(e.target.value, 10);
+          if (!isNaN(v)) update({ descanso_max: v });
+        }}
+        className="h-8 text-xs text-center px-1"
+        title="Descanso máximo (segundos)"
+      />
+
+      <div className="flex items-center gap-0.5">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button type="button" variant="ghost" size="icon" className="h-7 w-7"
+              onClick={onMoverParaCima} disabled={index === 0}>
+              <ChevronUp className="h-3.5 w-3.5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Mover para cima</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button type="button" variant="ghost" size="icon" className="h-7 w-7"
+              onClick={onMoverParaBaixo} disabled={index === total - 1}>
+              <ChevronDown className="h-3.5 w-3.5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Mover para baixo</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button type="button" variant="ghost" size="icon"
+              className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={onRemove}>
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Remover série</TooltipContent>
+        </Tooltip>
+      </div>
+    </div>
+  );
+}
+
+function SeriesManualHeader() {
+  return (
+    <div className="grid items-center gap-1.5 px-2 pb-1
+                    grid-cols-[24px_minmax(0,1fr)_auto_minmax(0,1fr)_minmax(0,1fr)_auto_minmax(0,1fr)_auto]">
+      <span />
+      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground text-center col-span-3">
+        Reps (mín – máx)
+      </span>
+      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground text-center col-span-3">
+        Descanso seg (mín – máx)
+      </span>
+      <span />
+    </div>
+  );
+}
+
+// ─── Linha de série em modo PERIODIZAÇÃO ─────────────────────────────────────
+
+interface SeriePeriodizacaoRowProps {
+  serie: SerieLocal;
+  index: number;
+  total: number;
+  onChange: (updated: SerieLocal) => void;
+  onRemove: () => void;
+  onMoverParaCima: () => void;
+  onMoverParaBaixo: () => void;
+}
+
+function SeriePeriodizacaoRow({
+  serie, index, total, onChange, onRemove, onMoverParaCima, onMoverParaBaixo,
+}: SeriePeriodizacaoRowProps) {
+  const meta = TIPO_META[serie.tipo];
+  return (
+    <div className="flex items-center gap-2 px-3 py-2 rounded-lg border hover:bg-muted/30 transition-colors">
+      <GripVertical className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
+      <span className="text-xs font-mono text-muted-foreground select-none w-6 text-center">
+        {String(index + 1).padStart(2, '0')}
+      </span>
+
+      <Select value={serie.tipo} onValueChange={(v) => onChange({ ...serie, tipo: v as TipoSerie })}>
+        <SelectTrigger className="h-8 text-xs flex-1">
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0 h-4 gap-0.5 font-mono', meta.color)}>
+              {meta.icon}{meta.abbr}
             </Badge>
-            {/* Em telas maiores, mostra o label */}
-            <span className="hidden sm:inline text-xs">{meta.label}</span>
+            <span className="text-xs">{meta.label}</span>
           </div>
         </SelectTrigger>
         <SelectContent>
@@ -113,157 +200,20 @@ function SerieRow({
         </SelectContent>
       </Select>
 
-      {/* Reps mín */}
-      <div className="relative">
-        <Input
-          type="number"
-          min={1}
-          max={999}
-          value={serie.reps_min}
-          onChange={(e) => {
-            const v = parseInt(e.target.value, 10);
-            if (!isNaN(v)) update({ reps_min: v, reps_max: Math.max(serie.reps_max, v) });
-          }}
-          className="h-8 text-xs text-center pr-1 pl-1"
-          title="Reps mínimas"
-        />
+      <div className="flex items-center gap-0.5 shrink-0">
+        <Button type="button" variant="ghost" size="icon" className="h-7 w-7"
+          onClick={onMoverParaCima} disabled={index === 0}>
+          <ChevronUp className="h-3.5 w-3.5" />
+        </Button>
+        <Button type="button" variant="ghost" size="icon" className="h-7 w-7"
+          onClick={onMoverParaBaixo} disabled={index === total - 1}>
+          <ChevronDown className="h-3.5 w-3.5" />
+        </Button>
+        <Button type="button" variant="ghost" size="icon"
+          className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={onRemove}>
+          <Trash2 className="h-3.5 w-3.5" />
+        </Button>
       </div>
-
-      {/* Separador visual */}
-      <span className="text-muted-foreground text-xs text-center select-none">–</span>
-
-      {/* Reps máx */}
-      <div className="relative">
-        <Input
-          type="number"
-          min={serie.reps_min}
-          max={999}
-          value={serie.reps_max}
-          onChange={(e) => {
-            const v = parseInt(e.target.value, 10);
-            if (!isNaN(v)) update({ reps_max: v });
-          }}
-          className="h-8 text-xs text-center pr-1 pl-1"
-          title="Reps máximas"
-        />
-      </div>
-
-      {/* Descanso */}
-      <div className="relative">
-        <Input
-          type="number"
-          min={0}
-          max={600}
-          value={serie.descanso_seg}
-          onChange={(e) => {
-            const v = parseInt(e.target.value, 10);
-            if (!isNaN(v)) update({ descanso_seg: v });
-          }}
-          className="h-8 text-xs text-center pr-1 pl-1"
-          title="Descanso em segundos"
-        />
-      </div>
-
-      {/* Ações */}
-      <div className="flex items-center gap-0.5">
-        {/* Mover para cima */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={onMoverParaCima}
-              disabled={index === 0}
-            >
-              <ChevronUp className="h-3.5 w-3.5" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Mover para cima</TooltipContent>
-        </Tooltip>
-
-        {/* Mover para baixo */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={onMoverParaBaixo}
-              disabled={index === total - 1}
-            >
-              <ChevronDown className="h-3.5 w-3.5" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Mover para baixo</TooltipContent>
-        </Tooltip>
-
-        {/* Replicar para próxima */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              onClick={onReplicarParaProxima}
-            >
-              <Copy className="h-3.5 w-3.5" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Adicionar próxima série igual</TooltipContent>
-        </Tooltip>
-
-        {/* Replicar para todas */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 text-muted-foreground hover:text-primary"
-              onClick={onReplicarParaTodas}
-            >
-              <CopyCheck className="h-3.5 w-3.5" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Copiar reps e descanso para todas as séries</TooltipContent>
-        </Tooltip>
-
-        {/* Remover */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 text-muted-foreground hover:text-destructive"
-              onClick={onRemove}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Remover série</TooltipContent>
-        </Tooltip>
-      </div>
-    </div>
-  );
-}
-
-// ─── Cabeçalho da tabela ──────────────────────────────────────────────────────
-
-function SeriesTableHeader() {
-  return (
-    <div className="grid grid-cols-[28px_110px_1fr_10px_1fr_1fr_auto] gap-2 px-3 pb-1">
-      <span />
-      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Tipo</span>
-      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground text-center">Reps mín</span>
-      <span />
-      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground text-center">Reps máx</span>
-      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground text-center">Desc (s)</span>
-      <span />
     </div>
   );
 }
@@ -273,40 +223,21 @@ function SeriesTableHeader() {
 interface SeriesEditorProps {
   series: SerieLocal[];
   onChange: (series: SerieLocal[]) => void;
-  /** Quando true, mostra também tipos Warm-up e Feeder */
+  /** Quando true, modo periodização (só ordem + tipo). Caso contrário, modo manual. */
   periodizacaoMode?: boolean;
-  /** Callbacks de replicação entre exercícios */
-  onReplicarParaExercicio?: () => void;
-  onReplicarParaSessao?: () => void;
   className?: string;
 }
 
 export function SeriesEditor({
-  series,
-  onChange,
-  periodizacaoMode = false,
-  onReplicarParaExercicio,
-  onReplicarParaSessao,
-  className,
+  series, onChange, periodizacaoMode = false, className,
 }: SeriesEditorProps) {
-  // ─── Mutações de série ───────────────────────────────────────────────
 
   const update = useCallback((index: number, updated: SerieLocal) => {
-    const next = series.map((s, i) => (i === index ? updated : s));
-    onChange(next);
+    onChange(series.map((s, i) => (i === index ? updated : s)));
   }, [series, onChange]);
 
   const remove = useCallback((index: number) => {
-    const next = series
-      .filter((_, i) => i !== index)
-      .map((s, i) => ({ ...s, ordem: i + 1 }));
-    onChange(next);
-  }, [series, onChange]);
-
-  const addSerie = useCallback((tipo: TipoSerie = 'WORK SET') => {
-    const ultima = [...series].reverse().find(s => s.tipo === tipo) ?? series[series.length - 1];
-    const nova = criarSerie(series.length + 1, tipo, ultima);
-    onChange([...series, nova]);
+    onChange(series.filter((_, i) => i !== index).map((s, i) => ({ ...s, ordem: i + 1 })));
   }, [series, onChange]);
 
   const moverParaCima = useCallback((index: number) => {
@@ -323,10 +254,16 @@ export function SeriesEditor({
     onChange(next.map((s, i) => ({ ...s, ordem: i + 1 })));
   }, [series, onChange]);
 
-  /** Adiciona uma cópia da série logo abaixo dela */
-  const replicarParaProxima = useCallback((index: number) => {
+  // ─── Modo MANUAL ─────────────────────────────────────────────────────────
+  const addSerieManual = useCallback(() => {
+    const ultima = series[series.length - 1];
+    onChange([...series, criarSerieManual(series.length + 1, ultima)]);
+  }, [series, onChange]);
+
+  // Duplica a série (logo abaixo dela), no modo manual
+  const duplicarSerie = useCallback((index: number) => {
     const ref = series[index];
-    const nova = criarSerie(index + 2, ref.tipo, ref);
+    const nova = criarSerieManual(index + 2, ref);
     const next = [
       ...series.slice(0, index + 1),
       nova,
@@ -335,18 +272,12 @@ export function SeriesEditor({
     onChange(next);
   }, [series, onChange]);
 
-  /** Copia reps e descanso desta série para todas as outras do mesmo tipo */
-  const replicarParaTodas = useCallback((index: number) => {
-    const ref = series[index];
-    const next = series.map(s =>
-      s.tipo === ref.tipo
-        ? { ...s, reps_min: ref.reps_min, reps_max: ref.reps_max, descanso_seg: ref.descanso_seg, _replicado: true }
-        : s
-    );
-    onChange(next);
+  // ─── Modo PERIODIZAÇÃO ───────────────────────────────────────────────────
+  const addSeriePeriodizacao = useCallback((tipo: TipoSerie) => {
+    onChange([...series, criarSeriePeriodizacao(series.length + 1, tipo)]);
   }, [series, onChange]);
 
-  // ─── Resumo por tipo ───────────────────────────────────────────────────────
+  // ─── Resumo ──────────────────────────────────────────────────────────────
   const resumo = series.reduce((acc, s) => {
     acc[s.tipo] = (acc[s.tipo] ?? 0) + 1;
     return acc;
@@ -354,15 +285,12 @@ export function SeriesEditor({
 
   return (
     <div className={cn('space-y-2', className)}>
-      {/* Badges de resumo */}
-      {series.length > 0 && (
+      {/* Resumo (apenas modo periodização) */}
+      {periodizacaoMode && series.length > 0 && (
         <div className="flex items-center gap-2 flex-wrap mb-1">
           {(Object.entries(resumo) as [TipoSerie, number][]).map(([tipo, qtd]) => (
-            <Badge
-              key={tipo}
-              variant="outline"
-              className={cn('text-[10px] gap-1 px-2 h-5', TIPO_META[tipo]?.color)}
-            >
+            <Badge key={tipo} variant="outline"
+              className={cn('text-[10px] gap-1 px-2 h-5', TIPO_META[tipo]?.color)}>
               {TIPO_META[tipo]?.icon}
               {qtd}× {TIPO_META[tipo]?.abbr}
             </Badge>
@@ -373,122 +301,79 @@ export function SeriesEditor({
         </div>
       )}
 
-      {/* Cabeçalho + linhas */}
+      {/* Linhas */}
       {series.length > 0 && (
         <div className="space-y-1">
-          <SeriesTableHeader />
-          {series.map((serie, i) => (
-            <SerieRow
-              key={serie.id}
-              serie={serie}
-              index={i}
-              total={series.length}
-              periodizacaoMode={periodizacaoMode}
-              onChange={(updated) => update(i, updated)}
-              onRemove={() => remove(i)}
-              onReplicarParaProxima={() => replicarParaProxima(i)}
-              onReplicarParaTodas={() => replicarParaTodas(i)}
-              onMoverParaCima={() => moverParaCima(i)}
-              onMoverParaBaixo={() => moverParaBaixo(i)}
-            />
-          ))}
+          {!periodizacaoMode && <SeriesManualHeader />}
+          {series.map((serie, i) =>
+            periodizacaoMode ? (
+              <SeriePeriodizacaoRow
+                key={serie.id}
+                serie={serie}
+                index={i}
+                total={series.length}
+                onChange={(u) => update(i, u)}
+                onRemove={() => remove(i)}
+                onMoverParaCima={() => moverParaCima(i)}
+                onMoverParaBaixo={() => moverParaBaixo(i)}
+              />
+            ) : (
+              <SerieManualRow
+                key={serie.id}
+                serie={serie}
+                index={i}
+                total={series.length}
+                onChange={(u) => update(i, u)}
+                onRemove={() => remove(i)}
+                onMoverParaCima={() => moverParaCima(i)}
+                onMoverParaBaixo={() => moverParaBaixo(i)}
+              />
+            )
+          )}
         </div>
       )}
 
       {/* Botões de adição */}
       <div className="flex items-center gap-2 flex-wrap pt-1">
         {periodizacaoMode ? (
-          // Modo periodização: botões por tipo
           <>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-7 text-xs gap-1.5 text-orange-600 border-orange-200 hover:bg-orange-50"
-              onClick={() => addSerie('WARM-UP')}
-            >
+            <Button type="button" variant="outline" size="sm"
+              className="h-7 text-xs gap-1.5 text-orange-700 border-orange-200 hover:bg-orange-50"
+              onClick={() => addSeriePeriodizacao('WARM-UP')}>
               <Flame className="h-3 w-3" /> + Warm-up
             </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-7 text-xs gap-1.5 text-yellow-700 border-yellow-200 hover:bg-yellow-50"
-              onClick={() => addSerie('FEEDER')}
-            >
+            <Button type="button" variant="outline" size="sm"
+              className="h-7 text-xs gap-1.5 text-yellow-800 border-yellow-200 hover:bg-yellow-50"
+              onClick={() => addSeriePeriodizacao('FEEDER')}>
               <Zap className="h-3 w-3" /> + Feeder
             </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
+            <Button type="button" variant="outline" size="sm"
               className="h-7 text-xs gap-1.5 text-primary border-primary/30 hover:bg-primary/5"
-              onClick={() => addSerie('WORK SET')}
-            >
+              onClick={() => addSeriePeriodizacao('WORK SET')}>
               <Target className="h-3 w-3" /> + Work Set
             </Button>
           </>
         ) : (
-          // Modo detalhado: botão único
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-7 text-xs gap-1.5"
-            onClick={() => addSerie('WORK SET')}
-          >
-            <Plus className="h-3 w-3" /> Adicionar série
-          </Button>
-        )}
-
-        {/* Separador */}
-        {(onReplicarParaExercicio || onReplicarParaSessao) && (
-          <div className="h-4 w-px bg-border mx-1" />
-        )}
-
-        {/* Replicar para outro exercício */}
-        {onReplicarParaExercicio && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-7 text-xs gap-1.5 text-muted-foreground"
-                onClick={onReplicarParaExercicio}
-              >
-                <Copy className="h-3 w-3" /> Copiar para exercício
+          <>
+            <Button type="button" variant="outline" size="sm" className="h-7 text-xs gap-1.5"
+              onClick={addSerieManual}>
+              <Plus className="h-3 w-3" /> Adicionar série
+            </Button>
+            {series.length > 0 && (
+              <Button type="button" variant="ghost" size="sm" className="h-7 text-xs gap-1.5 text-muted-foreground"
+                onClick={() => duplicarSerie(series.length - 1)}>
+                Duplicar última
               </Button>
-            </TooltipTrigger>
-            <TooltipContent>Copiar configuração para outro exercício da sessão</TooltipContent>
-          </Tooltip>
-        )}
-
-        {/* Replicar para outra sessão */}
-        {onReplicarParaSessao && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-7 text-xs gap-1.5 text-muted-foreground"
-                onClick={onReplicarParaSessao}
-              >
-                <CopyCheck className="h-3 w-3" /> Copiar para sessão
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Copiar configuração de todos os exercícios para outra sessão</TooltipContent>
-          </Tooltip>
+            )}
+          </>
         )}
       </div>
 
-      {/* Estado vazio */}
       {series.length === 0 && (
         <div className="text-center py-6 border border-dashed rounded-lg text-muted-foreground text-sm">
           Nenhuma série adicionada ainda.{' '}
           {periodizacaoMode
-            ? 'Adicione Warm-ups, Feeders e Work Sets acima.'
+            ? 'Adicione Warm-ups, Feeders e Work Sets na ordem desejada.'
             : 'Clique em "Adicionar série" para começar.'}
         </div>
       )}
