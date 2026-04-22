@@ -295,6 +295,7 @@ export default function TreinoFormPage({ mode }: TreinoFormPageProps) {
                     allExercicios={exercicios}
                     periodizacaoAtiva={usarPeriodizacao}
                     onChange={updateSessao}
+                    onSessoesChange={(novas) => { setSessoes(novas); setIsDirty(true); }}
                     defaultOpen={sessoes.length === 1}
                   />
                 ))}
