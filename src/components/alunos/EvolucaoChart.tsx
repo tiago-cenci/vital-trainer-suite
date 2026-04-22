@@ -1,6 +1,11 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+const RechartsResponsiveContainer = ResponsiveContainer as any;
+const RechartsXAxis = XAxis as any;
+const RechartsYAxis = YAxis as any;
+const RechartsTooltip = Tooltip as any;
+const RechartsLine = Line as any;
 import { TrendingUp, Star } from 'lucide-react';
 import { useEvolucaoAluno } from '@/hooks/useCorrecaoExtra';
 import { format } from 'date-fns';

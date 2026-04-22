@@ -87,7 +87,7 @@ export default function TreinoFormPage({ mode }: TreinoFormPageProps) {
     reset,
     formState: { errors },
   } = useForm<FormData>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(schema as any) as any,
     defaultValues: {
       nome: '',
       aluno_id: '',

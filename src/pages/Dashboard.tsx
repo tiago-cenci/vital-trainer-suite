@@ -11,6 +11,13 @@ import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip,
   BarChart, Bar, PieChart, Pie, Cell
 } from 'recharts';
+const RechartsResponsiveContainer = ResponsiveContainer as any;
+const RechartsXAxis = XAxis as any;
+const RechartsYAxis = YAxis as any;
+const RechartsTooltip = Tooltip as any;
+const RechartsLine = Line as any;
+const RechartsBar = Bar as any;
+const RechartsPie = Pie as any;
 
 interface DashboardStats {
   totalAlunos: number;
