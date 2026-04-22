@@ -34,6 +34,7 @@ import { useTreinos, useTreino } from '@/hooks/useTreinos';
 import type { SessaoLocal } from '@/types/treino';
 import { criarSessaoLocal, dbToExercicioLocal } from '@/types/treino';
 import { SessaoBlock } from '@/components/treinos/SessaoBlock';
+import { PlanejamentoSemanasGrid } from '@/components/treinos/PlanejamentoSemanasGrid';
 import { cn } from '@/lib/utils';
 
 // ─── Schema de validação ──────────────────────────────────────────────────────
