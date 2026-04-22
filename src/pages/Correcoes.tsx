@@ -275,7 +275,7 @@ export default function Correcoes() {
                               <div>
                                 <div className="font-semibold text-foreground">{dateGroup.dateLabel}</div>
                                 <div className="text-sm text-muted-foreground">
-                                  {dateGroup.items.length} execução{dateGroup.items.length !== 1 ? 'ões' : ''} com vídeo
+                                  {dateGroup.items.length} {dateGroup.items.length !== 1 ? 'execuções' : 'execução'} com vídeo
                                 </div>
                               </div>
                             </div>
