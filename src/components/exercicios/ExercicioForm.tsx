@@ -31,7 +31,7 @@ interface ExercicioFormProps {
 
 export function ExercicioForm({ exercicio, onSubmit, onCancel, isSubmitting = false }: ExercicioFormProps) {
   const { register, handleSubmit, formState: { errors }, watch, setValue } = useForm<ExercicioFormData>({
-    resolver: zodResolver(exercicioSchema),
+    resolver: zodResolver(exercicioSchema as any) as any,
     defaultValues: {
       nome: exercicio?.nome || '',
       descricao: exercicio?.descricao || '',

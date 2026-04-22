@@ -41,7 +41,7 @@ export function PeriodizacaoForm({ onSubmit, onCancel, isSubmitting = false }: P
     setValue,
     formState: { errors },
   } = useForm<PeriodizacaoFormData>({
-    resolver: zodResolver(periodizacaoSchema),
+    resolver: zodResolver(periodizacaoSchema as any) as any,
     defaultValues: {
       nome: '',
       semanas: [],
