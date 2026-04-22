@@ -490,6 +490,16 @@ export default function TreinoFormPage({ mode }: TreinoFormPageProps) {
               </CardContent>
             </Card>
 
+            {/* Grade semanal (preview / edição) */}
+            {usarPeriodizacao && (
+              <PlanejamentoSemanasGrid
+                treinoId={mode === 'editar' ? id : undefined}
+                data_inicio={watchAll.data_inicio}
+                data_vencimento={watchAll.data_vencimento}
+                periodizacao={periodizacaoSelecionada}
+              />
+            )}
+
             {/* Botão salvar (redundante no mobile) */}
             <Button
               type="submit"
