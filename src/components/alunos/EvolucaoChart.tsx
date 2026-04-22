@@ -64,30 +64,30 @@ export function EvolucaoChart({ alunoId }: EvolucaoChartProps) {
         </p>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={250}>
+        <RechartsResponsiveContainer width="100%" height={250}>
           <LineChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-            <XAxis 
-              dataKey="semanaLabel" 
-              className="text-xs" 
-              tick={{ fill: 'hsl(var(--muted-foreground))' }}
-            />
-            <YAxis 
-              domain={[0, 5]} 
-              ticks={[1, 2, 3, 4, 5]} 
+            <RechartsXAxis
+              dataKey="semanaLabel"
               className="text-xs"
               tick={{ fill: 'hsl(var(--muted-foreground))' }}
             />
-            <Tooltip
+            <RechartsYAxis
+              domain={[0, 5]}
+              ticks={[1, 2, 3, 4, 5]}
+              className="text-xs"
+              tick={{ fill: 'hsl(var(--muted-foreground))' }}
+            />
+            <RechartsTooltip
               contentStyle={{
                 backgroundColor: 'hsl(var(--card))',
                 border: '1px solid hsl(var(--border))',
                 borderRadius: '8px',
               }}
               formatter={(value: number) => [`${value.toFixed(1)} ★`, 'Média']}
-              labelFormatter={(label) => `Semana de ${label}`}
+              labelFormatter={(label: string) => `Semana de ${label}`}
             />
-            <Line
+            <RechartsLine
               type="monotone"
               dataKey="media"
               stroke="hsl(var(--primary))"
@@ -96,7 +96,7 @@ export function EvolucaoChart({ alunoId }: EvolucaoChartProps) {
               activeDot={{ r: 6 }}
             />
           </LineChart>
-        </ResponsiveContainer>
+        </RechartsResponsiveContainer>
       </CardContent>
     </Card>
   );
