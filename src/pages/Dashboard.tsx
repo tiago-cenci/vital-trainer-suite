@@ -11,6 +11,13 @@ import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip,
   BarChart, Bar, PieChart, Pie, Cell
 } from 'recharts';
+const RechartsResponsiveContainer = ResponsiveContainer as any;
+const RechartsXAxis = XAxis as any;
+const RechartsYAxis = YAxis as any;
+const RechartsTooltip = Tooltip as any;
+const RechartsLine = Line as any;
+const RechartsBar = Bar as any;
+const RechartsPie = Pie as any;
 
 interface DashboardStats {
   totalAlunos: number;
@@ -209,14 +216,14 @@ export default function Dashboard() {
     <Card className="dashboard-card">
       <CardHeader><CardTitle className="text-primary">Execuções por Semana (8)</CardTitle></CardHeader>
       <CardContent className="h-64">
-        <ResponsiveContainer width="100%" height="100%">
+        <RechartsResponsiveContainer width="100%" height="100%">
           <LineChart data={data || []}>
-            <XAxis dataKey="semana" tick={{ fontSize: 12 }} />
-            <YAxis tick={{ fontSize: 12 }} />
-            <Tooltip />
-            <Line type="monotone" dataKey="execucoes" stroke={BRAND.vinho} strokeWidth={2} dot={false} />
+            <RechartsXAxis dataKey="semana" tick={{ fontSize: 12 }} />
+            <RechartsYAxis tick={{ fontSize: 12 }} />
+            <RechartsTooltip />
+            <RechartsLine type="monotone" dataKey="execucoes" stroke={BRAND.vinho} strokeWidth={2} dot={false} />
           </LineChart>
-        </ResponsiveContainer>
+        </RechartsResponsiveContainer>
       </CardContent>
     </Card>
   );
@@ -225,14 +232,14 @@ export default function Dashboard() {
     <Card className="dashboard-card">
       <CardHeader><CardTitle className="text-primary">Correções por Status</CardTitle></CardHeader>
       <CardContent className="h-64">
-        <ResponsiveContainer width="100%" height="100%">
+        <RechartsResponsiveContainer width="100%" height="100%">
           <BarChart data={data || []}>
-            <XAxis dataKey="status" tick={{ fontSize: 12 }} />
-            <YAxis />
-            <Tooltip />
-            <Bar dataKey="qtd" fill={BRAND.acento} radius={[8, 8, 0, 0]} />
+            <RechartsXAxis dataKey="status" tick={{ fontSize: 12 }} />
+            <RechartsYAxis />
+            <RechartsTooltip />
+            <RechartsBar dataKey="qtd" fill={BRAND.acento} radius={[8, 8, 0, 0]} />
           </BarChart>
-        </ResponsiveContainer>
+        </RechartsResponsiveContainer>
       </CardContent>
     </Card>
   );
@@ -243,14 +250,14 @@ export default function Dashboard() {
       <Card className="dashboard-card">
         <CardHeader><CardTitle className="text-primary">Uso de Mídia por Provider</CardTitle></CardHeader>
         <CardContent className="h-64">
-          <ResponsiveContainer width="100%" height="100%">
+          <RechartsResponsiveContainer width="100%" height="100%">
             <PieChart>
-              <Pie data={data || []} dataKey="gb_total" nameKey="provider" innerRadius={50} outerRadius={80} label>
+              <RechartsPie data={data || []} dataKey="gb_total" nameKey="provider" innerRadius={50} outerRadius={80} label>
                 {(data || []).map((_: any, i: number) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-              </Pie>
-              <Tooltip />
+              </RechartsPie>
+              <RechartsTooltip />
             </PieChart>
-          </ResponsiveContainer>
+          </RechartsResponsiveContainer>
           {!!(data && data.length) && (
             <p className="text-sm text-muted-foreground mt-3">
               Duração média de vídeos: {data.map((d: any) => `${d.provider}: ${secToMinLabel(d.avg_duracao_seg)}`).join(' • ')}

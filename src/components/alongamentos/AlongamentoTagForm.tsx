@@ -28,7 +28,7 @@ interface Props {
 
 export function AlongamentoTagForm({ tag, onSubmit, onCancel, isSubmitting }: Props) {
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(schema as any) as any,
     defaultValues: {
       nome: tag?.nome ?? '',
       descricao: tag?.descricao ?? '',

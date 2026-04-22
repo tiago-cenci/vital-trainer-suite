@@ -174,17 +174,6 @@ export default function LandingPage() {
 
   return (
     <>
-      {/* SEO otimizado para personals trainers */}
-      <head>
-        <title>MUV TRAINER — Aplicativo de Gestão para Personal Trainer | Organize Alunos e Treinos</title>
-        <meta name="description" content="Plataforma completa para personal trainer gerenciar alunos, treinos e correções. Mais de 30 alunos? Chega de perder tudo no WhatsApp. Teste grátis." />
-        <meta name="keywords" content="personal trainer app, gestão de alunos personal trainer, aplicativo para personal, organizar treinos alunos, plataforma personal trainer brasil" />
-        <meta property="og:title" content="MUV TRAINER — App de Gestão para Personal Trainer" />
-        <meta property="og:description" content="Organize seus alunos, treinos e correções sem depender do WhatsApp. Gratuito durante o beta." />
-        <meta property="og:type" content="website" />
-        <link rel="canonical" href="https://muvtrainer.com.br" />
-      </head>
-
       <style>{css}</style>
       <div className="muv-root">
 

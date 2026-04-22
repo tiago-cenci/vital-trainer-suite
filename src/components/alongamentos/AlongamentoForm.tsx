@@ -37,7 +37,7 @@ interface Props {
 
 export function AlongamentoForm({ alongamento, tags, onSubmit, onCancel, isSubmitting }: Props) {
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<FormData>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(schema as any) as any,
     defaultValues: {
       descricao: alongamento?.descricao ?? '',
       grupo_muscular: (alongamento?.grupo_muscular as Grupo) ?? Constants.public.Enums.grupo_muscular[0],

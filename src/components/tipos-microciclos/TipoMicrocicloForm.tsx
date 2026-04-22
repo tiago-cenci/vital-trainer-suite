@@ -62,7 +62,7 @@ export function TipoMicrocicloForm({ tipo, onSubmit, onCancel, isSubmitting = fa
     setValue,
     formState: { errors },
   } = useForm<TipoMicrocicloFormData>({
-    resolver: zodResolver(tipoMicrocicloSchema),
+    resolver: zodResolver(tipoMicrocicloSchema as any) as any,
     defaultValues: {
       nome: tipo?.nome || '',
       descricao: tipo?.descricao || '',

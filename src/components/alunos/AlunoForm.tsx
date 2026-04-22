@@ -31,7 +31,7 @@ export function AlunoForm({ aluno, onSubmit, onCancel, isSubmitting = false }: A
     handleSubmit,
     formState: { errors },
   } = useForm<AlunoFormData>({
-    resolver: zodResolver(alunoSchema),
+    resolver: zodResolver(alunoSchema as any) as any,
     defaultValues: {
       nome: aluno?.nome || '',
       email: aluno?.email || '',
