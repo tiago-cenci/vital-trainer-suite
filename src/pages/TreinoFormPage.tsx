@@ -272,7 +272,7 @@ export default function TreinoFormPage({ mode }: TreinoFormPageProps) {
                 Sessões e Exercícios
               </h2>
               <Badge variant="secondary">
-                {sessoes.length} sessão{sessoes.length !== 1 ? 'ões' : ''}
+                {sessoes.length} {sessoes.length !== 1 ? 'sessões' : 'sessão'}
               </Badge>
             </div>
 
@@ -358,7 +358,7 @@ export default function TreinoFormPage({ mode }: TreinoFormPageProps) {
                     <SelectContent>
                       {[1, 2, 3, 4, 5, 6, 7].map(n => (
                         <SelectItem key={n} value={String(n)}>
-                          {n} sessão{n !== 1 ? 'ões' : ''}/semana
+                          {n} {n !== 1 ? 'sessões' : 'sessão'}/semana
                         </SelectItem>
                       ))}
                     </SelectContent>
